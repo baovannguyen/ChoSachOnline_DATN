@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\ShopThueBanSach.Server.props" />
+</Project>
