@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ShopThueBanSach.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8e19ce97941dd36f7edcb8297cc20cd7fb8147bc")]
 [assembly: System.Reflection.AssemblyProductAttribute("ShopThueBanSach.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ShopThueBanSach.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

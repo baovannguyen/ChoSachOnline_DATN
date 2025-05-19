@@ -28,8 +28,8 @@ namespace ShopThueBanSach.Server
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 
