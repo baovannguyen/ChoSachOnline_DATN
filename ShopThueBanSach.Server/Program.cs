@@ -5,13 +5,15 @@ using Microsoft.IdentityModel.Tokens;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Models;
+using ShopThueBanSach.Server.Services;
+using ShopThueBanSach.Server.Services.Interfaces;
 using System.Text;
 
 namespace ShopThueBanSach.Server
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +55,9 @@ namespace ShopThueBanSach.Server
             // Add services to the container.
 
             builder.Services.AddControllers();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IEmailSender, EmailSender>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
@@ -101,7 +106,12 @@ namespace ShopThueBanSach.Server
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "DATN API V1");
                 });
             }
-
+            //SeedData
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                await SeedData.InitializeAsync(services);
+            }
             app.UseHttpsRedirection();
 
             app.UseAuthentication();

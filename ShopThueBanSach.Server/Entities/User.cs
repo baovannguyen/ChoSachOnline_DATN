@@ -4,10 +4,10 @@ namespace ShopThueBanSach.Server.Entities
 {
     public class User : IdentityUser
     {
-        public string? VaiTro { get; set; }
-        public string? DiaChi { get; set; }
-        public DateTime NgaySinh { get; set; }
-        public double DiemTichLuy { get; set; }
-        public string? HinhDaiDien { get; set; }
+        public string? Role { get; set; }
+        public string? Address { get; set; }
+        public DateTime DateOfBirth { get; set; }
+        public double Points { get; set; }
+        public string? ImageUser { get; set; }
     }
 }

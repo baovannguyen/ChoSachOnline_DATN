@@ -1,4 +1,4 @@
-﻿using ShopThueBanSach.Server.Models;
+﻿using ShopThueBanSach.Server.Models.UserModel;
 
 namespace ShopThueBanSach.Server.Services.Interfaces
 {
