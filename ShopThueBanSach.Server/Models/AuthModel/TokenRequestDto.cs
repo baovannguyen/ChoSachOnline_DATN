@@ -1,4 +1,4 @@
-﻿namespace ShopThueBanSach.Server.Models
+﻿namespace ShopThueBanSach.Server.Models.AuthModel
 {
     public class TokenRequestDto
     {
