@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopThueBanSach.Server.Data;
 
@@ -11,9 +12,11 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250524033808_AddAuthor")]
+    partial class AddAuthor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -172,7 +175,7 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.HasKey("AuthorId");
 
-                    b.ToTable("Authors", (string)null);
+                    b.ToTable("Authors");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SellBook", b =>
@@ -229,7 +232,7 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("SellBooks", (string)null);
+                    b.ToTable("SellBooks");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.User", b =>
