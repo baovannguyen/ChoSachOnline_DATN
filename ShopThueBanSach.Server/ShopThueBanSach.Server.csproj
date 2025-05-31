@@ -37,10 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Area\Admin\Controllers\" />
-    <Folder Include="Area\Admin\Data\" />
-    <Folder Include="Area\Admin\Entity\" />
-    <Folder Include="Area\Admin\Service\Interface\" />
     <Folder Include="wwwroot\ImageUsers\" />
   </ItemGroup>
 
