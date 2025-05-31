@@ -1,51 +1,31 @@
-import { useEffect, useState } from 'react';
-import './App.css';
+﻿// App.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+
+import Categories from './admin/Categories';
+import Authors from './admin/Authors';
+import Books from './admin/Books';
+import RentBooks from './admin/RentBooks';
 
 function App() {
-    const [forecasts, setForecasts] = useState();
-
-    useEffect(() => {
-        populateWeatherData();
-    }, []);
-
-    const contents = forecasts === undefined
-        ? <p><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationreact">https://aka.ms/jspsintegrationreact</a> for more details.</em></p>
-        : <table className="table table-striped" aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
-
     return (
-        <div>
-            <h1 id="tableLabel">Weather forecast</h1>
-            <p>This component demonstrates fetching data from the server.</p>
-            {contents}
-        </div>
+        <Router>
+            <nav style={{ marginBottom: '20px' }}>
+                <Link to="/categories" style={{ marginRight: 10 }}>Thể loại</Link>
+                <Link to="/authors" style={{ marginRight: 10 }}>Tác giả</Link>
+                <Link to="/books" style={{ marginRight: 10 }}>Sách bán</Link>
+                <Link to="/rentbooks">Sách thuê</Link>
+            </nav>
+
+            <Routes>
+                <Route path="/" element={<Categories />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/authors" element={<Authors />} />
+                <Route path="/books" element={<Books />} />
+                <Route path="/rentbooks" element={<RentBooks />} />
+            </Routes>
+        </Router>
     );
-    
-    async function populateWeatherData() {
-        const response = await fetch('weatherforecast');
-        if (response.ok) {
-            const data = await response.json();
-            setForecasts(data);
-        }
-    }
 }
 
 export default App;

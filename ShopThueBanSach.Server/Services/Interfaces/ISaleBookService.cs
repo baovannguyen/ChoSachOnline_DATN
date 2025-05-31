@@ -1,0 +1,14 @@
+﻿using ShopThueBanSach.Server.Models.BooksModel;
+
+namespace ShopThueBanSach.Server.Services.Interfaces
+{
+    public interface ISaleBookService
+    {
+        Task<List<SaleBookDto>> GetAllAsync();
+        Task<SaleBookDto?> GetByIdAsync(string id);
+        Task<string> CreateAsync(CreateSaleBookDto dto);
+        Task<bool> UpdateAsync(string id, SaleBookDto dto);   // Thêm method update
+        Task<bool> DeleteAsync(string id);
+        Task<bool> SetVisibilityAsync(string id, bool isHidden);
+    }
+}
