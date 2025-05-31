@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -54,6 +55,12 @@ namespace ShopThueBanSach.Server
                     }
                 });
             });
+            // ✅ THÊM DÒNG NÀY để giữ nguyên PascalCase (CategoryId, AuthorId, ...)
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                });
             // Add services to the container.
 
             builder.Services.AddControllers();
@@ -62,7 +69,11 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IEmailSender, EmailSender>();
             builder.Services.AddScoped<ICustomerService, CustomerService>();
             builder.Services.AddScoped<IStaffService, StaffService>();
-
+            builder.Services.AddScoped<IAuthorService, AuthorService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<IRentBookService, RentBookService>();
+            builder.Services.AddScoped<ISaleBookService, SaleBookService>();
+            builder.Services.AddScoped<IRentBookItemService, RentBookItemService>();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
