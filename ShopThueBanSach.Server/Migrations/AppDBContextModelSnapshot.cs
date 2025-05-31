@@ -195,6 +195,23 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("Staffs");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Category", b =>
+                {
+                    b.Property<string>("CategoryId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CategoryId");
+
+                    b.ToTable("Categories");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Customer", b =>
                 {
                     b.Property<int>("CustomerId")
@@ -239,6 +256,190 @@ namespace ShopThueBanSach.Server.Migrations
                     b.HasKey("CustomerId");
 
                     b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorRentBook", b =>
+                {
+                    b.Property<string>("AuthorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RentBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("AuthorId", "RentBookId");
+
+                    b.HasIndex("RentBookId");
+
+                    b.ToTable("AuthorRentBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorSaleBook", b =>
+                {
+                    b.Property<string>("AuthorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SaleBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("AuthorId", "SaleBookId");
+
+                    b.HasIndex("SaleBookId");
+
+                    b.ToTable("AuthorSaleBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.CategoryRentBook", b =>
+                {
+                    b.Property<string>("CategoryId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RentBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("CategoryId", "RentBookId");
+
+                    b.HasIndex("RentBookId");
+
+                    b.ToTable("CategoryRentBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.CategorySaleBook", b =>
+                {
+                    b.Property<string>("CategoryId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SaleBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("CategoryId", "SaleBookId");
+
+                    b.HasIndex("SaleBookId");
+
+                    b.ToTable("CategorySaleBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBook", b =>
+                {
+                    b.Property<string>("RentBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Pages")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Publisher")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Size")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Translator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("RentBookId");
+
+                    b.ToTable("RentBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBookItem", b =>
+                {
+                    b.Property<string>("RentBookItemId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Condition")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RentBookId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("RentBookItemId");
+
+                    b.HasIndex("RentBookId");
+
+                    b.ToTable("RentBookItems");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
+                {
+                    b.Property<string>("SaleBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Pages")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Publisher")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Size")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Translator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SaleBookId");
+
+                    b.ToTable("SaleBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", b =>
+                {
+                    b.Property<string>("AuthorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AuthorId");
+
+                    b.ToTable("Authors");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.User", b =>
@@ -370,6 +571,123 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorRentBook", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", "Author")
+                        .WithMany("AuthorRentBooks")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentBook", "RentBook")
+                        .WithMany("AuthorRentBooks")
+                        .HasForeignKey("RentBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("RentBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorSaleBook", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", "Author")
+                        .WithMany("AuthorSaleBooks")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.SaleBook", "SaleBook")
+                        .WithMany("AuthorSaleBooks")
+                        .HasForeignKey("SaleBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("SaleBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.CategoryRentBook", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.Category", "Category")
+                        .WithMany("CategoryRentBooks")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentBook", "RentBook")
+                        .WithMany("CategoryRentBooks")
+                        .HasForeignKey("RentBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("RentBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.CategorySaleBook", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.Category", "Category")
+                        .WithMany("CategorySaleBooks")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.SaleBook", "SaleBook")
+                        .WithMany("CategorySaleBooks")
+                        .HasForeignKey("SaleBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("SaleBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBookItem", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentBook", "RentBook")
+                        .WithMany("RentBookItems")
+                        .HasForeignKey("RentBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RentBook");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Category", b =>
+                {
+                    b.Navigation("CategoryRentBooks");
+
+                    b.Navigation("CategorySaleBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBook", b =>
+                {
+                    b.Navigation("AuthorRentBooks");
+
+                    b.Navigation("CategoryRentBooks");
+
+                    b.Navigation("RentBookItems");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
+                {
+                    b.Navigation("AuthorSaleBooks");
+
+                    b.Navigation("CategorySaleBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", b =>
+                {
+                    b.Navigation("AuthorRentBooks");
+
+                    b.Navigation("AuthorSaleBooks");
                 });
 #pragma warning restore 612, 618
         }
