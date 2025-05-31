@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using ShopThueBanSach.Server.Area.Admin.Service;
+using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Models;
@@ -58,6 +60,10 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IEmailSender, EmailSender>();
+            builder.Services.AddScoped<ICustomerService, CustomerService>();
+            builder.Services.AddScoped<IStaffService, StaffService>();
+
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
