@@ -21,6 +21,7 @@ namespace ShopThueBanSach.Server
             {
                 c.SwaggerDoc("v1", new() { Title = "Identity API", Version = "v1" });
 
+                // Thêm cấu hình security definition
                 c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
                 {
                     Description = @"JWT Authorization header using the Bearer scheme.
@@ -35,29 +36,31 @@ namespace ShopThueBanSach.Server
                 c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
                 {
                     {
-                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    {
+                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
                         {
-                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                            {
-                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            },
+                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        },
                             Scheme = "oauth2",
                             Name = "Bearer",
                             In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-                        },
-                        new List<string>()
+
+                    },
+                            new List<string>()
                     }
                 });
             });
-
             // ✅ THÊM DÒNG NÀY để giữ nguyên PascalCase (CategoryId, AuthorId, ...)
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy = null;
                 });
+            // Add services to the container.
 
+            builder.Services.AddControllers();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IEmailSender, EmailSender>();
@@ -66,23 +69,21 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IRentBookService, RentBookService>();
             builder.Services.AddScoped<ISaleBookService, SaleBookService>();
             builder.Services.AddScoped<IRentBookItemService, RentBookItemService>();
-
+            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
-                options.OperationFilter<SwaggerFileOperationFilter>();
+                options.OperationFilter<SwaggerFileOperationFilter>(); // Hỗ trợ IFormFile
             });
-
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddMemoryCache();
-
             builder.Services.AddDbContext<AppDBContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
             builder.Services.AddIdentity<User, IdentityRole>()
-                .AddEntityFrameworkStores<AppDBContext>()
-                .AddDefaultTokenProviders();
+            .AddEntityFrameworkStores<AppDBContext>()
+            .AddDefaultTokenProviders();
 
+            // Add JWT Authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -107,6 +108,7 @@ namespace ShopThueBanSach.Server
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
+            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -115,17 +117,19 @@ namespace ShopThueBanSach.Server
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "DATN API V1");
                 });
             }
-
+            //SeedData
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
                 await SeedData.InitializeAsync(services);
             }
-
             app.UseHttpsRedirection();
+
             app.UseAuthentication();
             app.UseAuthorization();
+
             app.MapControllers();
+
             app.MapFallbackToFile("/index.html");
 
             app.Run();
