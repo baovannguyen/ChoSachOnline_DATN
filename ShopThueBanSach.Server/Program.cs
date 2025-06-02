@@ -62,7 +62,7 @@ namespace ShopThueBanSach.Server
                     options.JsonSerializerOptions.PropertyNamingPolicy = null;
                 });
             // Add services to the container.
-
+            //HI
             builder.Services.AddControllers();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>();
