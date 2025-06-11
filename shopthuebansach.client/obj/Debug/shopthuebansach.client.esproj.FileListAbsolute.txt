@@ -2,3 +2,4 @@ D:\FPT\DATNNNNNNNN\DATN_code\ShopThueBanSach\shopthuebansach.client\obj\Debug\sh
 D:\DATN\Final\ChoSachOnline_DATN\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
 C:\Users\win11\Source\Repos\ChoSachOnline_DATN\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
 C:\Users\Minh Tri\Documents\Full đồ án\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
+D:\DATN\Sell\ChoSachOnline_DATN\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache

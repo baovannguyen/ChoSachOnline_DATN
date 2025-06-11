@@ -8,6 +8,7 @@ using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Models;
+using ShopThueBanSach.Server.Models.PaymentMethod;
 using ShopThueBanSach.Server.Services;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Text;
@@ -19,7 +20,14 @@ namespace ShopThueBanSach.Server
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromHours(2);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            }); // Thêm bộ nhớ đệm cho Session
+            builder.Services.AddHttpContextAccessor(); // cần để lấy Session
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new() { Title = "Identity API", Version = "v1" });
@@ -64,6 +72,7 @@ namespace ShopThueBanSach.Server
             // Add services to the container.
             //HI
             builder.Services.AddControllers();
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IEmailSender, EmailSender>();
@@ -74,7 +83,12 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IRentBookService, RentBookService>();
             builder.Services.AddScoped<ISaleBookService, SaleBookService>();
             builder.Services.AddScoped<IRentBookItemService, RentBookItemService>();
-
+            builder.Services.AddScoped<ISaleCartService , SaleCartService>();
+            builder.Services.AddScoped<ICartRentService, CartRentService>();
+            //builder.Services.AddScoped<ICheckoutService, CheckoutService>();
+            builder.Services.AddScoped<IRentOrderService, RentOrderService>();
+            builder.Services.Configure<MomoConfig>(builder.Configuration.GetSection("Momo"));
+            builder.Services.AddScoped<IMoMoPaymentService, MoMoPaymentService>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
@@ -110,10 +124,10 @@ namespace ShopThueBanSach.Server
             });
 
             var app = builder.Build();
-
+            
             app.UseDefaultFiles();
             app.UseStaticFiles();
-
+           
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -133,9 +147,8 @@ namespace ShopThueBanSach.Server
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseSession();
             app.MapControllers();
-
             app.MapFallbackToFile("/index.html");
 
             app.Run();

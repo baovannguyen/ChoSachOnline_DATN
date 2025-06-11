@@ -16,7 +16,10 @@ namespace ShopThueBanSach.Server.Data
         public DbSet<SaleBook> SaleBooks { get; set; }
         public DbSet<RentBook> RentBooks { get; set; }
         public DbSet<RentBookItem> RentBookItems { get; set; }
+        public DbSet<RentOrderDetail> RentOrderDetails { get; set; }
 
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<RentOrder> RentOrders { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

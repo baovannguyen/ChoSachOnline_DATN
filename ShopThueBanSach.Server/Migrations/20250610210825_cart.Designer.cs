@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopThueBanSach.Server.Data;
 
@@ -11,9 +12,11 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250610210825_cart")]
+    partial class cart
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -633,6 +636,40 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Models.CartModel.CartItemRent", b =>
+                {
+                    b.Property<string>("BookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("BookPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BookTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsSelected")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RentOrderOrderId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("RentalFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("BookId");
+
+                    b.HasIndex("RentOrderOrderId");
+
+                    b.ToTable("CartItemRent");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -801,6 +838,13 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Models.CartModel.CartItemRent", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", null)
+                        .WithMany("Items")
+                        .HasForeignKey("RentOrderOrderId");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Category", b =>
                 {
                     b.Navigation("CategoryRentBooks");
@@ -819,6 +863,8 @@ namespace ShopThueBanSach.Server.Migrations
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrder", b =>
                 {
+                    b.Navigation("Items");
+
                     b.Navigation("Payment");
                 });
 
