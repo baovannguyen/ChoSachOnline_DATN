@@ -17,7 +17,7 @@ namespace ShopThueBanSach.Server.Entities
         public string RentBookId { get; set; } = null!;
 
         [Required]
-        public RentBookItemStatus Status { get; set; } = RentBookItemStatus.Available;
+        public RentBookItemStatus Status { get; set; } = RentBookItemStatus.Available; 
 
         [Required]
         [Range(0, 100)]

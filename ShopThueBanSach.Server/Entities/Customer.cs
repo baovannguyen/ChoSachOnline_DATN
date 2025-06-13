@@ -1,4 +1,7 @@
-﻿namespace ShopThueBanSach.Server.Entities
+﻿using ShopThueBanSach.Server.Entities.Relationships;
+using System.Text.Json.Serialization;
+
+namespace ShopThueBanSach.Server.Entities
 {
     public class Customer
     {
@@ -12,6 +15,9 @@
         public DateTime BirthDate { get; set; }
         public int LoyaltyPoints { get; set; }
         public bool IsBanned { get; set; } = false;
+      
+
+
     }
 
 }

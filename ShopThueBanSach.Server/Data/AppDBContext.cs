@@ -4,6 +4,7 @@ using ShopThueBanSach.Server.Area.Admin.Entities;
 using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Entities.Relationships;
 using ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities;
+using System.Reflection.Emit;
 
 namespace ShopThueBanSach.Server.Data
 {
@@ -16,6 +17,14 @@ namespace ShopThueBanSach.Server.Data
         public DbSet<SaleBook> SaleBooks { get; set; }
         public DbSet<RentBook> RentBooks { get; set; }
         public DbSet<RentBookItem> RentBookItems { get; set; }
+        public DbSet<Promotion> Promotions { get; set; }
+
+        public DbSet<DiscountCode> DiscountCodes { get; set; }
+        //Cấu hình quan hệ Voucher
+
+        public DbSet<Voucher> Vouchers { get; set; }
+        public DbSet<FavoriteBook> FavoriteBooks { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -51,6 +60,36 @@ namespace ShopThueBanSach.Server.Data
                 .HasOne(r => r.RentBook)
                 .WithMany(b => b.RentBookItems)
                 .HasForeignKey(r => r.RentBookId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SaleBook - Promotion (1 promotion to many books)
+            builder.Entity<SaleBook>()
+                .HasOne(s => s.Promotion)
+                .WithMany(p => p.SaleBooks)
+                .HasForeignKey(s => s.PromotionId)
+                .OnDelete(DeleteBehavior.SetNull);
+            //Cấu hình quan hệ Voucher
+
+            builder.Entity<Voucher>()
+    .HasOne(v => v.User)
+    .WithMany()
+    .HasForeignKey(v => v.UserId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+
+            // Cấu hình FavoriteBook
+            builder.Entity<FavoriteBook>().HasKey(f => new { f.UserId, f.SaleBookId });
+
+            builder.Entity<FavoriteBook>()
+                .HasOne(f => f.User)
+                .WithMany(u => u.FavoriteBooks) // Nếu bạn có ICollection<FavoriteBook> trong User
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<FavoriteBook>()
+                .HasOne(f => f.SaleBook)
+                .WithMany(s => s.FavoriteBooks) // Nếu bạn có ICollection<FavoriteBook> trong SaleBook
+                .HasForeignKey(f => f.SaleBookId)
                 .OnDelete(DeleteBehavior.Cascade);
 
         }

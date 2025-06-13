@@ -12,8 +12,8 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250531162919_INtrallTRIBACKEND")]
-    partial class INtrallTRIBACKEND
+    [Migration("20250612114713_FixFavoriteBookCompositeKey")]
+    partial class FixFavoriteBookCompositeKey
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -261,6 +261,73 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("Customers");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.DiscountCode", b =>
+                {
+                    b.Property<string>("DiscountCodeId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DiscountCodeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("DiscountValue")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("DiscountCodeId");
+
+                    b.ToTable("DiscountCodes");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.FavoriteBook", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SaleBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("UserId", "SaleBookId");
+
+                    b.HasIndex("SaleBookId");
+
+                    b.ToTable("FavoriteBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Promotion", b =>
+                {
+                    b.Property<string>("PromotionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<double>("DiscountPercentage")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PromotionName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PromotionId");
+
+                    b.ToTable("Promotions");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorRentBook", b =>
                 {
                     b.Property<string>("AuthorId")
@@ -407,6 +474,9 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("PromotionId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Publisher")
                         .HasColumnType("nvarchar(max)");
 
@@ -424,6 +494,8 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("SaleBookId");
+
+                    b.HasIndex("PromotionId");
 
                     b.ToTable("SaleBooks");
                 });
@@ -525,6 +597,39 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Voucher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RequiredPoints")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId1")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
+
+                    b.ToTable("Vouchers");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -574,6 +679,25 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.FavoriteBook", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.SaleBook", "SaleBook")
+                        .WithMany("FavoriteBooks")
+                        .HasForeignKey("SaleBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany("FavoriteBooks")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SaleBook");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorRentBook", b =>
@@ -663,11 +787,40 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("RentBook");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.Promotion", "Promotion")
+                        .WithMany("SaleBooks")
+                        .HasForeignKey("PromotionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Promotion");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Voucher", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", null)
+                        .WithMany("Vouchers")
+                        .HasForeignKey("UserId1");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Category", b =>
                 {
                     b.Navigation("CategoryRentBooks");
 
                     b.Navigation("CategorySaleBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Promotion", b =>
+                {
+                    b.Navigation("SaleBooks");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBook", b =>
@@ -684,6 +837,8 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("AuthorSaleBooks");
 
                     b.Navigation("CategorySaleBooks");
+
+                    b.Navigation("FavoriteBooks");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", b =>
@@ -691,6 +846,13 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("AuthorRentBooks");
 
                     b.Navigation("AuthorSaleBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.User", b =>
+                {
+                    b.Navigation("FavoriteBooks");
+
+                    b.Navigation("Vouchers");
                 });
 #pragma warning restore 612, 618
         }
