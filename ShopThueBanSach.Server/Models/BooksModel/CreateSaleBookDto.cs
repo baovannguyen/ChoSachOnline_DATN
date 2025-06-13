@@ -25,8 +25,8 @@ namespace ShopThueBanSach.Server.Models.BooksModel
 
         public string? ImageUrl { get; set; }
 
-        //  Thêm dòng này
-        public bool IsHidden { get; set; }  // true = ẩn sách, false = hiện sách
+        // ✅ Ẩn / hiện sách
+        public bool IsHidden { get; set; }
 
         [Required]
         [MinLength(1)]
@@ -35,6 +35,10 @@ namespace ShopThueBanSach.Server.Models.BooksModel
         [Required]
         [MinLength(1)]
         public List<string> CategoryIds { get; set; }
+
+        // ✅ Thêm dòng này để cho phép thêm khuyến mãi (hoặc bỏ qua nếu không có)
+        public string? PromotionId { get; set; }
     }
+
 
 }

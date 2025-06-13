@@ -34,8 +34,10 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> Create([FromBody] CreateSaleBookDto dto)
         {
             var id = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id }, null);
+            var result = await _service.GetByIdAsync(id); // ✅ Lấy lại dữ liệu đã tạo
+            return CreatedAtAction(nameof(GetById), new { id }, result); // ✅ Trả về SaleBookDto
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] SaleBookDto dto)

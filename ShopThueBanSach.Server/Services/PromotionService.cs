@@ -84,6 +84,23 @@ namespace ShopThueBanSach.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> ApplyPromotionToBooksAsync(ApplyPromotionDTO dto)
+        {
+            var promotion = await _context.Promotions.FindAsync(dto.PromotionId);
+            if (promotion == null) return false;
+
+            var books = await _context.SaleBooks
+                .Where(b => dto.SaleBookIds.Contains(b.SaleBookId))
+                .ToListAsync();
+
+            foreach (var book in books)
+            {
+                book.PromotionId = promotion.PromotionId;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
     }
 }

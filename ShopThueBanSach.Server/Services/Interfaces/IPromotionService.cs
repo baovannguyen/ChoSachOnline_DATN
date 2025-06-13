@@ -9,5 +9,7 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<bool> CreatePromotionAsync(PromotionDTO model);
         Task<bool> UpdatePromotionAsync(string id, PromotionDTO model);
         Task<bool> DeletePromotionAsync(string id);
+        Task<bool> ApplyPromotionToBooksAsync(ApplyPromotionDTO dto);
+
     }
 }

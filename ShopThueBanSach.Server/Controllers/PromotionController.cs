@@ -45,5 +45,14 @@ namespace ShopThueBanSach.Server.Controllers
             var result = await _service.DeletePromotionAsync(id);
             return result ? Ok() : NotFound();
         }
+        [HttpPost("apply")]
+        public async Task<IActionResult> ApplyPromotionToBooks([FromBody] ApplyPromotionDTO dto)
+        {
+            var result = await _service.ApplyPromotionToBooksAsync(dto);
+            return result
+                ? Ok(new { message = "Áp dụng khuyến mãi thành công!" })
+                : BadRequest(new { message = "Không thể áp dụng khuyến mãi." });
+        }
+
     }
 }

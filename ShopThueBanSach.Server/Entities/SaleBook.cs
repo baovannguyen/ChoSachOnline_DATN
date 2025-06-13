@@ -20,6 +20,8 @@ namespace ShopThueBanSach.Server.Entities
         public int Pages { get; set; } // Số trang
 
         public decimal Price { get; set; } // Giá gốc
+        public decimal FinalPrice { get; set; } // Giá sau khuyến mãi
+
 
         public int Quantity { get; set; } // Số lượng tồn kho
 
