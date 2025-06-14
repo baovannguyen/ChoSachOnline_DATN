@@ -12,8 +12,8 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250531162919_INtrallTRIBACKEND")]
-    partial class INtrallTRIBACKEND
+    [Migration("20250614053744_AddReport")]
+    partial class AddReport
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
