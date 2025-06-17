@@ -16,18 +16,22 @@ namespace ShopThueBanSach.Server.Services
             _configuration = configuration;
         }
 
-        public async Task<string> CreatePaymentUrlAsync(string orderId, decimal amount, string returnUrl, string notifyUrl)
+        public async Task<string> CreatePaymentUrlAsync(string orderId, decimal amount, string returnUrl, string notifyUrl, string extraData)
         {
             var endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
             var partnerCode = _configuration["MoMo:PartnerCode"];
             var accessKey = _configuration["MoMo:AccessKey"];
             var secretKey = _configuration["MoMo:SecretKey"];
-            var requestId = Guid.NewGuid().ToString("N"); // Không có dấu gạch ngang
+            var requestId = Guid.NewGuid().ToString("N");
             var orderInfo = $"Thanh toán đơn thuê sách {orderId}";
             var requestType = "captureWallet";
-            var amountStr = ((int)amount).ToString(); // Ép về số nguyên
+            var amountStr = ((int)amount).ToString();
 
-            var rawHash = $"accessKey={accessKey}&amount={amountStr}&extraData=&ipnUrl={notifyUrl}&orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}&redirectUrl={returnUrl}&requestId={requestId}&requestType={requestType}";
+            // Ensure extraData is not null
+            extraData ??= "";
+
+            // Raw hash string must match MoMo spec
+            var rawHash = $"accessKey={accessKey}&amount={amountStr}&extraData={extraData}&ipnUrl={notifyUrl}&orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}&redirectUrl={returnUrl}&requestId={requestId}&requestType={requestType}";
             var signature = HmacSHA256(rawHash, secretKey);
 
             var payload = new
@@ -40,7 +44,7 @@ namespace ShopThueBanSach.Server.Services
                 orderInfo,
                 redirectUrl = returnUrl,
                 ipnUrl = notifyUrl,
-                extraData = "",
+                extraData,
                 requestType,
                 signature,
                 lang = "vi"
@@ -55,9 +59,13 @@ namespace ShopThueBanSach.Server.Services
                 throw new Exception($"MoMo API request failed: {response.StatusCode} - {responseContent}");
 
             using var jsonDoc = JsonDocument.Parse(responseContent);
-            return jsonDoc.RootElement.GetProperty("payUrl").GetString() ?? "";
-        }
+            if (jsonDoc.RootElement.TryGetProperty("payUrl", out var payUrlElement))
+            {
+                return payUrlElement.GetString() ?? throw new Exception("Không tìm thấy payUrl từ MoMo");
+            }
 
+            throw new Exception("Phản hồi MoMo không hợp lệ: thiếu 'payUrl'");
+        }
 
         private string HmacSHA256(string rawData, string secretKey)
         {

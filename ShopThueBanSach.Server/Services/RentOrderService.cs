@@ -3,163 +3,184 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
-using ShopThueBanSach.Server.Models;
 using ShopThueBanSach.Server.Models.CartModel;
 using ShopThueBanSach.Server.Services.Interfaces;
-using System.Security.Claims;
 using System.Text.Json;
 
 namespace ShopThueBanSach.Server.Services
 {
     public class RentOrderService : IRentOrderService
     {
-        private readonly IMoMoPaymentService _moMoPaymentService;
         private readonly AppDBContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IMoMoPaymentService _moMoPaymentService;
 
-        public RentOrderService(AppDBContext context, IHttpContextAccessor httpContextAccessor, IMoMoPaymentService moMoPaymentService)
+        public RentOrderService(AppDBContext context, IHttpContextAccessor httpContextAccessor, IMoMoPaymentService momo)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
-            _moMoPaymentService = moMoPaymentService;
+            _moMoPaymentService = momo;
         }
 
-        public async Task<IActionResult> CreateRentOrderAsync(RentOrderRequest request)
+        public async Task<IActionResult> CreateRentOrderWithCashAsync(RentOrderRequest request)
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext == null) return new BadRequestObjectResult("No HttpContext");
+            var result = await BuildOrderFromSessionCartAsync(request);
+            if (result is IActionResult error) return error;
 
-            var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return new UnauthorizedResult();
+            var orderData = (RentOrderResult)result;
+            await SaveOrderAsync(orderData);
 
-            var session = httpContext.Session;
-            var cartJson = session.GetString("RentalCart");
-            if (string.IsNullOrEmpty(cartJson)) return new BadRequestObjectResult("Giỏ hàng trống");
+            return new OkObjectResult(new
+            {
+                Message = "Tạo đơn hàng thành công",
+                OrderId = orderData.Order.OrderId,
+                TotalAmount = orderData.Order.TotalFee
+            });
+        }
 
-            var sessionCart = JsonSerializer.Deserialize<List<CartItemRent>>(cartJson);
-            if (sessionCart == null || !sessionCart.Any()) return new BadRequestObjectResult("Không có sản phẩm nào trong giỏ");
+        public async Task<IActionResult> PrepareMoMoOrderAsync(RentOrderRequest request)
+        {
+            var result = await BuildOrderFromSessionCartAsync(request);
+            if (result is IActionResult error) return error;
 
-            // Tính số ngày thuê
+            var orderData = (RentOrderResult)result;
+
+            var extraData = JsonSerializer.Serialize(request);
+
+            string payUrl = await _moMoPaymentService.CreatePaymentUrlAsync(
+                orderId: orderData.Order.OrderId,
+                amount: orderData.Order.TotalFee,
+                returnUrl: "https://localhost:7003/momo-return",
+                notifyUrl: "https://localhost:7003/api/momoorder/callback",
+                extraData: extraData
+            );
+
+            return new OkObjectResult(new
+            {
+                Message = "Chuyển đến thanh toán MoMo",
+                PaymentUrl = payUrl
+            });
+        }
+
+        public async Task CreateRentOrderAfterMoMoAsync(RentOrderRequest request)
+        {
+            var result = await BuildOrderFromSessionCartAsync(request);
+            if (result is not RentOrderResult orderData) return;
+
+            await SaveOrderAsync(orderData);
+        }
+
+        private async Task<object> BuildOrderFromSessionCartAsync(RentOrderRequest request)
+        {
+            var context = _httpContextAccessor.HttpContext;
+            if (context == null) return new BadRequestObjectResult("No HttpContext");
+
+            var session = context.Session;
+            var json = session.GetString("RentalCart");
+            if (string.IsNullOrEmpty(json)) return new BadRequestObjectResult("Giỏ hàng trống");
+
+            var cart = JsonSerializer.Deserialize<List<CartItemRent>>(json);
+            if (cart == null || !cart.Any()) return new BadRequestObjectResult("Không có sản phẩm trong giỏ");
+
             int rentalDays = (request.EndDate - request.StartDate).Days;
             if (rentalDays <= 0) return new BadRequestObjectResult("Ngày thuê không hợp lệ");
 
             const decimal baseRentalFee = 20000;
             const int baseRentalDays = 45;
             const decimal extraFeePerDay = 3000;
-            const decimal shippingFlatFee = 20000;
+            const decimal shippingFee = 20000;
 
             decimal totalFee = 0;
             decimal totalDeposit = 0;
-            decimal shippingFee = 0;
+            var orderId = Guid.NewGuid().ToString();
 
-            var bookIds = sessionCart.Select(i => i.BookId).ToList();
-            var books = await _context.RentBooks
-                .Where(b => bookIds.Contains(b.RentBookId))
-                .ToListAsync();
-
-            var items = new List<CartItemRent>();
             var orderDetails = new List<RentOrderDetail>();
 
-            foreach (var cartItem in sessionCart)
+            foreach (var item in cart)
             {
-                var book = books.FirstOrDefault(b => b.RentBookId == cartItem.BookId);
-                if (book == null) continue;
+                var rentBookItem = await _context.RentBookItems
+                    .Include(r => r.RentBook)
+                    .FirstOrDefaultAsync(x => x.RentBookItemId == item.RentBookItemId);
+
+                if (rentBookItem == null || rentBookItem.RentBook == null)
+                    continue;
+
+                if (rentBookItem.Status != RentBookItemStatus.Available)
+                    continue;
 
                 decimal rentalFee = baseRentalFee;
                 if (rentalDays > baseRentalDays)
-                {
-                    int extraDays = rentalDays - baseRentalDays;
-                    rentalFee += extraDays * extraFeePerDay;
-                }
+                    rentalFee += (rentalDays - baseRentalDays) * extraFeePerDay;
 
                 totalFee += rentalFee;
-                totalDeposit += book.Price;
-
-                var cartItemRent = new CartItemRent
-                {
-                    BookId = book.RentBookId,
-                    BookTitle = book.Title,
-                    BookPrice = book.Price,
-                    RentalFee = rentalFee,
-                    Quantity = 1,
-                    IsSelected = true,
-                    TotalFee = rentalFee
-                };
-                items.Add(cartItemRent);
+                totalDeposit += rentBookItem.RentBook.Price;
 
                 orderDetails.Add(new RentOrderDetail
                 {
-                    BookId = book.RentBookId,
-                    BookTitle = book.Title,
-                    Quantity = 1,
-                    BookPrice = book.Price,
+                    OrderId = orderId,
+                    RentBookItemId = rentBookItem.RentBookItemId,
+                    BookTitle = rentBookItem.RentBook.Title,
+                    BookPrice = rentBookItem.RentBook.Price,
                     RentalFee = rentalFee,
-                    TotalFee = rentalFee
+                    TotalFee = rentalFee,
+                    Condition = rentBookItem.Condition
                 });
             }
+
+            if (!orderDetails.Any())
+                return new BadRequestObjectResult("Không có sách hợp lệ trong giỏ hàng");
 
             if (request.HasShippingFee)
             {
                 if (string.IsNullOrWhiteSpace(request.Address) || string.IsNullOrWhiteSpace(request.Phone))
-                    return new BadRequestObjectResult("Địa chỉ và số điện thoại là bắt buộc khi chọn vận chuyển.");
+                    return new BadRequestObjectResult("Vui lòng nhập địa chỉ và số điện thoại");
 
-                shippingFee = shippingFlatFee;
                 totalFee += shippingFee;
             }
 
-            var orderId = Guid.NewGuid().ToString();
-
-            var rentOrder = new RentOrder
+            var order = new RentOrder
             {
                 OrderId = orderId,
-                UserId = userId,
-                Items = items,
-                StartDate = request.StartDate = DateTime.Now,
+                UserId = request.UserId,
+                StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 RentalDays = rentalDays,
                 HasShippingFee = request.HasShippingFee,
-                ShippingFee = shippingFee,
-                TotalFee = totalFee + totalDeposit,
+                ShippingFee = request.HasShippingFee ? shippingFee : 0,
                 TotalDeposit = totalDeposit,
+                TotalFee = totalFee + totalDeposit,
                 OrderDate = DateTime.Now,
                 Status = "Pending"
             };
 
-            await _context.RentOrders.AddAsync(rentOrder);
-
-            foreach (var detail in orderDetails)
+            return new RentOrderResult
             {
-                detail.OrderId = orderId;
-                _context.RentOrderDetails.Add(detail);
+                Order = order,
+                Details = orderDetails
+            };
+        }
+
+        private async Task SaveOrderAsync(RentOrderResult data)
+        {
+            await _context.RentOrders.AddAsync(data.Order);
+            await _context.RentOrderDetails.AddRangeAsync(data.Details);
+
+            // Đánh dấu RentBookItem đã được thuê
+            foreach (var detail in data.Details)
+            {
+                var item = await _context.RentBookItems.FindAsync(detail.RentBookItemId);
+                if (item != null)
+                    item.Status = RentBookItemStatus.Rented;
             }
 
             await _context.SaveChangesAsync();
-            session.Remove("RentalCart");
-
-            if (request.PaymentMethod?.ToLower() == "momo")
-            {
-                string returnUrl = "https://webhook.site/return-url";
-                string notifyUrl = "https://webhook.site/return-url";
-
-                string momoUrl = await _moMoPaymentService.CreatePaymentUrlAsync(orderId, rentOrder.TotalFee, returnUrl, notifyUrl);
-
-                return new OkObjectResult(new
-                {
-                    Message = "Chuyển sang thanh toán MoMo",
-                    PaymentUrl = momoUrl,
-                    OrderId = orderId
-                });
-            }
-
-            // Trường hợp không chọn momo
-            return new OkObjectResult(new
-            {
-                Message = "Tạo đơn hàng thành công",
-                OrderId = orderId,
-                TotalAmount = rentOrder.TotalFee
-            });
+            _httpContextAccessor.HttpContext?.Session.Remove("RentalCart");
         }
 
-
+        private class RentOrderResult
+        {
+            public RentOrder Order { get; set; }
+            public List<RentOrderDetail> Details { get; set; }
+        }
     }
 }

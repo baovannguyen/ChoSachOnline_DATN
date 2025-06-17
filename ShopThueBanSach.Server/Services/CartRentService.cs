@@ -3,6 +3,7 @@ using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Models;
 using ShopThueBanSach.Server.Models.CartModel;
 using ShopThueBanSach.Server.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace ShopThueBanSach.Server.Services
 {
@@ -12,20 +13,20 @@ namespace ShopThueBanSach.Server.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private const string SessionKey = "RentalCart";
 
-        public CartRentService(IHttpContextAccessor httpContextAccessor, AppDBContext appDBContext)
+        public CartRentService(IHttpContextAccessor httpContextAccessor, AppDBContext context)
         {
             _httpContextAccessor = httpContextAccessor;
-            _context = appDBContext;
+            _context = context;
         }
 
-        private ISession Session => _httpContextAccessor.HttpContext.Session;
+        private ISession Session => _httpContextAccessor.HttpContext!.Session;
 
         public List<CartItemRent> GetCart()
         {
             var json = Session.GetString(SessionKey);
             return string.IsNullOrEmpty(json)
                 ? new List<CartItemRent>()
-                : JsonConvert.DeserializeObject<List<CartItemRent>>(json);
+                : JsonConvert.DeserializeObject<List<CartItemRent>>(json)!;
         }
 
         private void SaveCart(List<CartItemRent> cart)
@@ -34,61 +35,53 @@ namespace ShopThueBanSach.Server.Services
             Session.SetString(SessionKey, json);
         }
 
-        public void AddToCart(string bookId)
+        public async Task<bool> AddToCartAsync(string rentBookItemId)
         {
             var cart = GetCart();
-            var item = cart.FirstOrDefault(x => x.BookId == bookId);
 
-            if (item != null)
+            if (cart.Any(x => x.RentBookItemId == rentBookItemId))
+                return false; // Đã có
+
+            var item = await _context.RentBookItems
+                .Include(x => x.RentBook)
+                .FirstOrDefaultAsync(x => x.RentBookItemId == rentBookItemId && x.Status == Entities.RentBookItemStatus.Available);
+
+            if (item == null || item.RentBook == null) return false;
+
+            var rentalFee = CalculateRentalFee(45); // mặc định 45 ngày
+
+            var cartItem = new CartItemRent
             {
-                item.Quantity++;
-            }
-            else
-            {
-                var book = _context.RentBooks.FirstOrDefault(b => b.RentBookId == bookId);
-                if (book == null) return;
+                RentBookItemId = item.RentBookItemId,
+                RentBookTitle = item.RentBook.Title,
+                BookPrice = item.RentBook.Price,
+                Condition = item.Condition,
+                RentalFee = rentalFee,
+                TotalFee = rentalFee,
+                IsSelected = true
+            };
 
-                cart.Add(new CartItemRent
-                {
-                    BookId = book.RentBookId,
-                    BookTitle = book.Title,
-                    BookPrice = book.Price,
-                    RentalFee = CalculateRentalFee(45), // Mặc định: 45 ngày thuê
-                    Quantity = 1,
-                    IsSelected = true
-                });
-            }
+            cart.Add(cartItem);
+            SaveCart(cart);
+            return true;
+        }
 
+        public void RemoveFromCart(string rentBookItemId)
+        {
+            var cart = GetCart();
+            cart.RemoveAll(x => x.RentBookItemId == rentBookItemId);
             SaveCart(cart);
         }
 
-        public void UpdateQuantity(string bookId, int quantity)
+        public void ToggleSelect(string rentBookItemId)
         {
             var cart = GetCart();
-            var item = cart.FirstOrDefault(x => x.BookId == bookId);
-            if (item != null)
-            {
-                item.Quantity = quantity;
-                SaveCart(cart);
-            }
-        }
-
-        public void ToggleSelect(string bookId)
-        {
-            var cart = GetCart();
-            var item = cart.FirstOrDefault(x => x.BookId == bookId);
+            var item = cart.FirstOrDefault(x => x.RentBookItemId == rentBookItemId);
             if (item != null)
             {
                 item.IsSelected = !item.IsSelected;
                 SaveCart(cart);
             }
-        }
-
-        public void RemoveFromCart(string bookId)
-        {
-            var cart = GetCart();
-            cart.RemoveAll(x => x.BookId == bookId);
-            SaveCart(cart);
         }
 
         public void ClearCart()
@@ -101,29 +94,32 @@ namespace ShopThueBanSach.Server.Services
             return GetCart().Where(x => x.IsSelected).ToList();
         }
 
-        private decimal CalculateRentalFee(int rentalDays)
-        {
-            decimal baseFee = 20000m / 45m;
-            if (rentalDays <= 45)
-                return baseFee * rentalDays;
-
-            int extraDays = rentalDays - 45;
-            return baseFee * 45 + extraDays * 3000;
-        }
-
-        // Gọi lại khi thay đổi ngày thuê
         public void RecalculateRentalFee(DateTime startDate, DateTime endDate)
         {
             var cart = GetCart();
             int rentalDays = (endDate - startDate).Days;
-            if (rentalDays < 1) rentalDays = 1;
+            if (rentalDays <= 0) rentalDays = 1;
 
             foreach (var item in cart)
             {
-                item.RentalFee = CalculateRentalFee(rentalDays) * item.Quantity;
+                item.RentalFee = CalculateRentalFee(rentalDays);
+                item.TotalFee = item.RentalFee;
             }
 
             SaveCart(cart);
+        }
+
+        private decimal CalculateRentalFee(int rentalDays)
+        {
+            const decimal baseFee = 20000m;
+            const int baseDays = 45;
+            const decimal extraPerDay = 3000m;
+
+            if (rentalDays <= baseDays)
+                return baseFee;
+
+            int extraDays = rentalDays - baseDays;
+            return baseFee + (extraDays * extraPerDay);
         }
     }
 }

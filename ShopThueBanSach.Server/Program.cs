@@ -89,6 +89,8 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IRentOrderService, RentOrderService>();
             builder.Services.Configure<MomoConfig>(builder.Configuration.GetSection("Momo"));
             builder.Services.AddScoped<IMoMoPaymentService, MoMoPaymentService>();
+            builder.Services.AddScoped<IMoMoCallbackService, MoMoCallbackService>();
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>

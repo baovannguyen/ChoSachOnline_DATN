@@ -9,22 +9,19 @@ namespace ShopThueBanSach.Server.Entities
         public int Id { get; set; }
 
         [Required]
-        public string OrderId { get; set; } // Foreign Key
+        public string OrderId { get; set; }
         [ForeignKey("OrderId")]
         public RentOrder Order { get; set; }
 
         [Required]
-        public string BookId { get; set; } // Foreign Key
-        public RentBook Book { get; set; }
+        public string RentBookItemId { get; set; }
+        public RentBookItem RentBookItem { get; set; }
 
         public string BookTitle { get; set; }
-
-        public int Quantity { get; set; }
+        public int Condition { get; set; }
 
         public decimal BookPrice { get; set; }
-
         public decimal RentalFee { get; set; }
-
         public decimal TotalFee { get; set; }
     }
 }

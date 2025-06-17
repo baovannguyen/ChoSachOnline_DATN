@@ -11,5 +11,6 @@
         public string? Phone { get; set; }
 
         public string PaymentMethod { get; set; } // e.g. "Cash", "BankTransfer"
+        public List<CartItemRent> CartItems { get; set; } = new();
     }
 }

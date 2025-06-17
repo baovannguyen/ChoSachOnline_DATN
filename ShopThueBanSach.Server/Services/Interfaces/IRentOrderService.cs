@@ -7,7 +7,9 @@ namespace ShopThueBanSach.Server.Services.Interfaces
 {
     public interface IRentOrderService
     {
-        Task<IActionResult> CreateRentOrderAsync(RentOrderRequest request);
+        Task<IActionResult> CreateRentOrderWithCashAsync(RentOrderRequest request);
+        Task<IActionResult> PrepareMoMoOrderAsync(RentOrderRequest request);
+        Task CreateRentOrderAfterMoMoAsync(RentOrderRequest request);
 
     }
 }

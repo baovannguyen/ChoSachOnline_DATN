@@ -1,8 +1,11 @@
-﻿namespace ShopThueBanSach.Server.Services.Interfaces
+﻿using Microsoft.AspNetCore.Mvc;
+using ShopThueBanSach.Server.Models.PaymentMethod;
+
+namespace ShopThueBanSach.Server.Services.Interfaces
 {
     public interface IMoMoPaymentService
     {
-        Task<string> CreatePaymentUrlAsync(string orderId, decimal amount, string returnUrl, string notifyUrl);
-
+        Task<string> CreatePaymentUrlAsync(string orderId, decimal amount, string returnUrl, string notifyUrl, string extraData);
+        //Task<IActionResult> HandlePaymentCallbackAsync(MoMoResult result);
     }
 }

@@ -462,10 +462,6 @@ namespace ShopThueBanSach.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("BookId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<decimal>("BookPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -473,12 +469,16 @@ namespace ShopThueBanSach.Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Condition")
+                        .HasColumnType("int");
+
                     b.Property<string>("OrderId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<string>("RentBookItemId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("RentalFee")
                         .HasColumnType("decimal(18,2)");
@@ -488,9 +488,9 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookId");
-
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("RentBookItemId");
 
                     b.ToTable("RentOrderDetails");
                 });
@@ -784,21 +784,21 @@ namespace ShopThueBanSach.Server.Migrations
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrderDetail", b =>
                 {
-                    b.HasOne("ShopThueBanSach.Server.Entities.RentBook", "Book")
-                        .WithMany()
-                        .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Book");
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentBookItem", "RentBookItem")
+                        .WithMany()
+                        .HasForeignKey("RentBookItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Order");
+
+                    b.Navigation("RentBookItem");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Category", b =>

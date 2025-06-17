@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ShopThueBanSach.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class up : Migration
+    public partial class cartordertr : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -121,6 +121,27 @@ namespace ShopThueBanSach.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RentBooks", x => x.RentBookId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentOrders",
+                columns: table => new
+                {
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RentalDays = table.Column<int>(type: "int", nullable: false),
+                    HasShippingFee = table.Column<bool>(type: "bit", nullable: false),
+                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalDeposit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentOrders", x => x.OrderId);
                 });
 
             migrationBuilder.CreateTable(
@@ -339,6 +360,27 @@ namespace ShopThueBanSach.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Payments",
+                columns: table => new
+                {
+                    PaymentId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Method = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.PaymentId);
+                    table.ForeignKey(
+                        name: "FK_Payments_RentOrders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "RentOrders",
+                        principalColumn: "OrderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AuthorSaleBook",
                 columns: table => new
                 {
@@ -383,6 +425,37 @@ namespace ShopThueBanSach.Server.Migrations
                         column: x => x.SaleBookId,
                         principalTable: "SaleBooks",
                         principalColumn: "SaleBookId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentOrderDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RentBookItemId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    BookTitle = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Condition = table.Column<int>(type: "int", nullable: false),
+                    BookPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    RentalFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentOrderDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentOrderDetails_RentBookItems_RentBookItemId",
+                        column: x => x.RentBookItemId,
+                        principalTable: "RentBookItems",
+                        principalColumn: "RentBookItemId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RentOrderDetails_RentOrders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "RentOrders",
+                        principalColumn: "OrderId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -446,9 +519,25 @@ namespace ShopThueBanSach.Server.Migrations
                 column: "SaleBookId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Payments_OrderId",
+                table: "Payments",
+                column: "OrderId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RentBookItems_RentBookId",
                 table: "RentBookItems",
                 column: "RentBookId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentOrderDetails_OrderId",
+                table: "RentOrderDetails",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentOrderDetails_RentBookItemId",
+                table: "RentOrderDetails",
+                column: "RentBookItemId");
         }
 
         /// <inheritdoc />
@@ -485,7 +574,10 @@ namespace ShopThueBanSach.Server.Migrations
                 name: "Customers");
 
             migrationBuilder.DropTable(
-                name: "RentBookItems");
+                name: "Payments");
+
+            migrationBuilder.DropTable(
+                name: "RentOrderDetails");
 
             migrationBuilder.DropTable(
                 name: "Staffs");
@@ -504,6 +596,12 @@ namespace ShopThueBanSach.Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "SaleBooks");
+
+            migrationBuilder.DropTable(
+                name: "RentBookItems");
+
+            migrationBuilder.DropTable(
+                name: "RentOrders");
 
             migrationBuilder.DropTable(
                 name: "RentBooks");

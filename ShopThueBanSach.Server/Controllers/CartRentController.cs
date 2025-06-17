@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Models.CartModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 
@@ -23,19 +24,21 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
         [HttpPost("add")]
-        public IActionResult AddToCart([FromBody] AddToCartDto dto)
+        public async Task<IActionResult> AddToCart([FromBody] string rentBookItemId)
         {
-            _cartService.AddToCart(dto.BookId);
+            var success = await _cartService.AddToCartAsync(rentBookItemId);
+            if (!success) return BadRequest("Không thể thêm sản phẩm vào giỏ");
+
             return Ok(_cartService.GetCart());
         }
 
-        [HttpPut("update-quantity")]
+       /* [HttpPut("update-quantity")]
         public IActionResult UpdateQuantity([FromBody] UpdateQuantityDto dto)
         {
-            _cartService.UpdateQuantity(dto.BookId, dto.Quantity);
+            _cartService.(dto.BookId, dto.Quantity);
             return Ok(_cartService.GetCart());
         }
-
+*/
         [HttpDelete("remove/{bookId}")]
         public IActionResult Remove(string bookId)
         {
