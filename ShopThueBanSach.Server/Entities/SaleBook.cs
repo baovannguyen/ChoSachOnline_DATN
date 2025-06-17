@@ -19,10 +19,12 @@ namespace ShopThueBanSach.Server.Entities
         public int Pages { get; set; }
 
         public decimal Price { get; set; }
+        public decimal FinalPrice { get; set; } // Giá sau khuyến mãi
 
         public int Quantity { get; set; }
 
         public string? ImageUrl { get; set; }
+
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public bool IsHidden { get; set; }
@@ -30,5 +32,12 @@ namespace ShopThueBanSach.Server.Entities
         public ICollection<AuthorSaleBook> AuthorSaleBooks { get; set; }
 
         public ICollection<CategorySaleBook> CategorySaleBooks { get; set; }
+        // FK và Navigation Property cho Promotion (1 sách có 1 khuyến mãi)
+        // Add this to SaleBook class
+        public string? PromotionId { get; set; } // FK
+        public Promotion? Promotion { get; set; } // Navigation property
+
+        // Trong SaleBook.cs
+        public ICollection<FavoriteBook> FavoriteBooks { get; set; }
     }
 }

@@ -10,85 +10,64 @@ namespace ShopThueBanSach.Server.Controllers
     public class SaleBooksController : ControllerBase
     {
         private readonly ISaleBookService _service;
-        private readonly IActivityNotificationService _notificationService;
-        private readonly IStaffService _staffService;
 
-        public SaleBooksController(
-            ISaleBookService service,
-            IActivityNotificationService notificationService,
-            IStaffService staffService)
+        public SaleBooksController(ISaleBookService service)
         {
             _service = service;
-            _notificationService = notificationService;
-            _staffService = staffService;
         }
 
-        private int? GetCurrentStaffId()
-        {
-            var claim = User.FindFirst("StaffId")?.Value;
-            return int.TryParse(claim, out var id) ? id : null;
-        }
-
-        private async Task CreateNotificationIfStaffExistsAsync(string description)
-        {
-            var staffId = GetCurrentStaffId();
-            if (staffId.HasValue && await _staffService.ExistsAsync(staffId.Value))
-            {
-                await _notificationService.CreateNotificationAsync(staffId.Value, description);
-            }
-        }
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
-            var saleBook = await _service.GetByIdAsync(id);
-            return saleBook == null ? NotFound() : Ok(saleBook);
+            var result = await _service.GetByIdAsync(id);
+            if (result == null) return NotFound();
+            return Ok(result);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateSaleBookDto dto)
         {
             var id = await _service.CreateAsync(dto);
-            await CreateNotificationIfStaffExistsAsync($"Thêm sách bán: {dto.Title}");
-            return CreatedAtAction(nameof(GetById), new { id }, null);
+            var result = await _service.GetByIdAsync(id); // ✅ Lấy lại dữ liệu đã tạo
+            return CreatedAtAction(nameof(GetById), new { id }, result); // ✅ Trả về SaleBookDto
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] SaleBookDto dto)
         {
-            var success = await _service.UpdateAsync(id, dto);
-            if (success)
-                await CreateNotificationIfStaffExistsAsync($"Cập nhật sách bán: {dto.Title}");
+            if (dto == null) return BadRequest();
 
-            return success ? Ok() : NotFound();
+            // Gán id từ route vào service, dto không chứa id
+            var success = await _service.UpdateAsync(id, dto);
+            if (!success) return NotFound();
+
+            return Ok();
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             var success = await _service.DeleteAsync(id);
-            if (success)
-                await CreateNotificationIfStaffExistsAsync($"Xóa sách bán: {id}");
-
-            return success ? NoContent() : NotFound();
+            if (!success) return NotFound();
+            return NoContent();
         }
 
         [HttpPut("set-visibility/{id}/{isHidden}")]
         public async Task<IActionResult> SetVisibility(string id, int isHidden)
         {
-            if (isHidden != 0 && isHidden != 1)
-                return BadRequest("isHidden phải là 0 hoặc 1");
-
+            if (isHidden != 0 && isHidden != 1) return BadRequest("isHidden must be 0 (false) or 1 (true)");
             var success = await _service.SetVisibilityAsync(id, isHidden == 1);
-            if (success)
-                await CreateNotificationIfStaffExistsAsync($"Thay đổi hiển thị sách bán: {id} -> {(isHidden == 1 ? "ẩn" : "hiện")}");
-
-            return success ? Ok() : NotFound();
+            if (!success) return NotFound();
+            return Ok();
         }
     }
 }

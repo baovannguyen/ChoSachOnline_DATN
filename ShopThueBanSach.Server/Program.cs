@@ -78,6 +78,13 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IActivityNotificationService, ActivityNotificationService>();
             builder.Services.AddScoped<IUserManagerService, UserManagerService>();
             builder.Services.AddScoped<ISlideService, SlideService>();
+            // Đăng ký các dịch vụ nghiệp vụ
+            builder.Services.AddScoped<IDiscountCodeService, DiscountCodeService>();
+            builder.Services.AddScoped<IPromotionService, PromotionService>();
+            // Đăng ký dịch vụ VoucherService với interface IVoucherService
+            builder.Services.AddScoped<IVoucherService, VoucherService>();
+            // Đăng ký dịch vụ FavoriteBookService
+            builder.Services.AddScoped<IFavoriteBookService, FavoriteBookService>();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

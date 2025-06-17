@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.Text.Json.Serialization;
 
 namespace ShopThueBanSach.Server.Entities
 {
@@ -9,5 +10,10 @@ namespace ShopThueBanSach.Server.Entities
         public DateTime DateOfBirth { get; set; }
         public double Points { get; set; }
         public string? ImageUser { get; set; }
+        [JsonIgnore] // Bỏ qua khi serialize JSON
+        public ICollection<FavoriteBook> FavoriteBooks { get; set; }
+
+        [JsonIgnore]
+        public ICollection<Voucher> Vouchers { get; set; }
     }
 }
