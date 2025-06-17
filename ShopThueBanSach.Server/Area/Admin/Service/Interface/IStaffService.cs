@@ -9,6 +9,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service.Interface
         Task<Staff> AddAsync(Staff staff);
         Task<Staff> UpdateAsync(Staff staff);
         Task<bool> DeleteAsync(int id);
+        Task<bool> ExistsAsync(int staffId);
     }
 
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopThueBanSach.Server.Data;
 
@@ -11,9 +12,11 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250617043336_Datn")]
+    partial class Datn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,29 +24,6 @@ namespace ShopThueBanSach.Server.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("ActivityNotification", b =>
-                {
-                    b.Property<string>("NotificationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StaffId")
-                        .HasColumnType("int");
-
-                    b.HasKey("NotificationId");
-
-                    b.HasIndex("StaffId");
-
-                    b.ToTable("ActivityNotifications");
-                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -216,6 +196,29 @@ namespace ShopThueBanSach.Server.Migrations
                     b.HasKey("StaffId");
 
                     b.ToTable("Staffs");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.ActivityNotification", b =>
+                {
+                    b.Property<string>("NotificationId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityNotifications");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Category", b =>
@@ -474,26 +477,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("Authors");
                 });
 
-            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Slide", b =>
-                {
-                    b.Property<int>("SlideId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SlideId"));
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LinkUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("SlideId");
-
-                    b.ToTable("Slides");
-                });
-
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.User", b =>
                 {
                     b.Property<string>("Id")
@@ -574,17 +557,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("ActivityNotification", b =>
-                {
-                    b.HasOne("ShopThueBanSach.Server.Area.Admin.Entities.Staff", "Staff")
-                        .WithMany()
-                        .HasForeignKey("StaffId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Staff");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -634,6 +606,17 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.ActivityNotification", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorRentBook", b =>

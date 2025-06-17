@@ -17,6 +17,7 @@ namespace ShopThueBanSach.Server.Models.BooksModel
         [Range(0, 100, ErrorMessage = "Condition must be between 0 and 100")]
         public int Condition { get; set; }
 
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public bool IsHidden { get; set; }
     }

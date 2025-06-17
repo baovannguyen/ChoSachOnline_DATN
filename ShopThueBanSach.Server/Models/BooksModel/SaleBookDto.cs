@@ -16,6 +16,8 @@ namespace ShopThueBanSach.Server.Models.BooksModel
         public decimal Price { get; set; }
         public string? ImageUrl { get; set; }
         public int Quantity { get; set; }
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+
         public bool IsHidden { get; set; }
         public List<string> AuthorIds { get; set; }
         public List<string> CategoryIds { get; set; }

@@ -20,7 +20,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Entities
         public string Address { get; set; }
 
         public DateTime? DateOfBirth { get; set; }
-
+    
     }
 
 }

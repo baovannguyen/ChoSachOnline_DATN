@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopThueBanSach.Server.Data;
 
@@ -11,9 +12,11 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250617051108_RenameUserIdToStaffId")]
+    partial class RenameUserIdToStaffId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,7 +28,6 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ActivityNotification", b =>
                 {
                     b.Property<string>("NotificationId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedDate")
@@ -472,26 +474,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.HasKey("AuthorId");
 
                     b.ToTable("Authors");
-                });
-
-            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Slide", b =>
-                {
-                    b.Property<int>("SlideId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SlideId"));
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LinkUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("SlideId");
-
-                    b.ToTable("Slides");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.User", b =>

@@ -60,6 +60,12 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             await _context.SaveChangesAsync();
             return true;
         }
+        // StaffService.cs
+        public async Task<bool> ExistsAsync(int staffId)
+        {
+            return await _context.Staffs.AnyAsync(s => s.StaffId == staffId);
+        }
+
     }
 
 }

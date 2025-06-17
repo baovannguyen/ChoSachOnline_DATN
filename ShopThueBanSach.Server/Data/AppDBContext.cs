@@ -16,7 +16,8 @@ namespace ShopThueBanSach.Server.Data
         public DbSet<SaleBook> SaleBooks { get; set; }
         public DbSet<RentBook> RentBooks { get; set; }
         public DbSet<RentBookItem> RentBookItems { get; set; }
-
+        public DbSet<ActivityNotification> ActivityNotifications { get; set; }
+        public DbSet<Slide> Slides { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -52,7 +53,13 @@ namespace ShopThueBanSach.Server.Data
                 .WithMany(b => b.RentBookItems)
                 .HasForeignKey(r => r.RentBookId)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<ActivityNotification>()
+    .HasOne(n => n.Staff)
+    .WithMany() // Nếu Staff có ICollection<ActivityNotification> thì thêm .WithMany(s => s.ActivityNotifications)
+    .HasForeignKey(n => n.StaffId)
+    .OnDelete(DeleteBehavior.Cascade); // hoặc .Restrict nếu bạn muốn giữ thông báo khi xóa staff
 
         }
+
     }
 }
