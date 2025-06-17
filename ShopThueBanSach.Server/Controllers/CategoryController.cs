@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Security.Claims;
+using ShopThueBanSach.Server.Data; // <-- Add
+using Microsoft.EntityFrameworkCore; // <-- Add
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -12,15 +15,18 @@ namespace ShopThueBanSach.Server.Controllers
         private readonly ICategoryService _service;
         private readonly IActivityNotificationService _notificationService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly AppDBContext _dbContext;
 
         public CategoryController(
             ICategoryService service,
             IActivityNotificationService notificationService,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            AppDBContext dbContext)
         {
             _service = service;
             _notificationService = notificationService;
             _httpContextAccessor = httpContextAccessor;
+            _dbContext = dbContext;
         }
 
         [HttpGet]
@@ -43,14 +49,33 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var result = await _service.CreateAsync(dto);
 
-            // ⚠ Tạm gán StaffId thủ công
-            int staffId = 1; // hoặc lấy từ token nếu có
-            var description = $"Staff added new category: {dto.CategoryName}";
-            await _notificationService.CreateNotificationAsync(staffId, description);
+            var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
+
+            int? staffId = null;
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                var staff = await _dbContext.Staffs.FirstOrDefaultAsync(s => s.Email == userEmail);
+                if (staff != null)
+                {
+                    staffId = staff.StaffId;
+                }
+            }
+
+            if (staffId != null)
+            {
+                var description = $"Staff added new category: {dto.CategoryName}";
+                await _notificationService.CreateNotificationAsync(staffId.Value, description);
+            }
+            else
+            {
+                Console.WriteLine("⚠ Không tìm thấy Staff tương ứng với email hiện tại.");
+            }
 
             return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
         }
 
+        // ... các phương thức khác giữ nguyên
+    
         /*[HttpPost]
         public async Task<IActionResult> Create(CategoryDto dto)
         {

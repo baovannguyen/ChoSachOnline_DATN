@@ -76,6 +76,7 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IRentBookItemService, RentBookItemService>();
             builder.Services.AddScoped<IReportService, ReportService>();
             builder.Services.AddScoped<IActivityNotificationService, ActivityNotificationService>();
+            builder.Services.AddScoped<IUserManagerService, UserManagerService>();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
