@@ -17,6 +17,7 @@ namespace ShopThueBanSach.Server.Data
         public DbSet<RentBook> RentBooks { get; set; }
         public DbSet<RentBookItem> RentBookItems { get; set; }
         public DbSet<ActivityNotification> ActivityNotifications { get; set; }
+        public DbSet<Slide> Slides { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
