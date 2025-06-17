@@ -12,8 +12,8 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250614053744_AddReport")]
-    partial class AddReport
+    [Migration("20250617043336_Datn")]
+    partial class Datn
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -198,6 +198,29 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("Staffs");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.ActivityNotification", b =>
+                {
+                    b.Property<string>("NotificationId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityNotifications");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Category", b =>
                 {
                     b.Property<string>("CategoryId")
@@ -326,6 +349,9 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<string>("RentBookId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -370,6 +396,9 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<int>("Condition")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsHidden")
                         .HasColumnType("bit");
 
@@ -391,6 +420,9 @@ namespace ShopThueBanSach.Server.Migrations
                 {
                     b.Property<string>("SaleBookId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -574,6 +606,17 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.ActivityNotification", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorRentBook", b =>

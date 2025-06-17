@@ -25,6 +25,7 @@ namespace ShopThueBanSach.Server.Entities
         public string? ImageUrl { get; set; }
 
         public bool IsHidden { get; set; }
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public ICollection<AuthorRentBook> AuthorRentBooks { get; set; }
 

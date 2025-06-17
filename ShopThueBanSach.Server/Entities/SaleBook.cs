@@ -23,6 +23,7 @@ namespace ShopThueBanSach.Server.Entities
         public int Quantity { get; set; }
 
         public string? ImageUrl { get; set; }
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public bool IsHidden { get; set; }
 

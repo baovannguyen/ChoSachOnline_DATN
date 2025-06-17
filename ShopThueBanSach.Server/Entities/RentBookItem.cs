@@ -22,6 +22,7 @@ namespace ShopThueBanSach.Server.Entities
         [Required]
         [Range(0, 100)]
         public int Condition { get; set; }
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public bool IsHidden { get; set; } = false;
 

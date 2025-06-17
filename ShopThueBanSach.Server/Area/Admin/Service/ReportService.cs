@@ -1,11 +1,11 @@
-﻿namespace ShopThueBanSach.Server.Area.Admin.Service
-{
-    using ShopThueBanSach.Server.Area.Admin.Model;
-    using ShopThueBanSach.Server.Area.Admin.Service.Interface;
-    using ShopThueBanSach.Server.Data;
-    using ShopThueBanSach.Server.Entities;
-    using ShopThueBanSach.Server.Services.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using ShopThueBanSach.Server.Area.Admin.Models;
+using ShopThueBanSach.Server.Area.Admin.Service.Interface;
+using ShopThueBanSach.Server.Data;
+using ShopThueBanSach.Server.Entities;
 
+namespace ShopThueBanSach.Server.Area.Admin.Service
+{
     public class ReportService : IReportService
     {
         private readonly AppDBContext _context;
@@ -17,25 +17,82 @@
 
         public BookStatisticsDto GetBookStatistics()
         {
-            var totalRentBooks = _context.RentBooks.Count();
-            var totalRentBookItems = _context.RentBookItems.Count();
-            var availableRentBookItems = _context.RentBookItems.Count(x => x.Status == RentBookItemStatus.Available);
+            var rentBooks = _context.RentBooks.AsNoTracking();
+            var rentBookItems = _context.RentBookItems.AsNoTracking();
+            var saleBooks = _context.SaleBooks.AsNoTracking();
 
-            var totalSaleBooks = _context.SaleBooks.Count();
+            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
+        }
 
-            var totalRentBookValue = _context.RentBooks.Sum(x => x.Price * x.Quantity);
-            var totalSaleBookValue = _context.SaleBooks.Sum(x => x.Price * x.Quantity);
+        public BookStatisticsDto GetBookStatisticsByWeek(int year, int weekNumber)
+        {
+            var startDate = FirstDateOfWeekISO8601(year, weekNumber);
+            var endDate = startDate.AddDays(7);
 
+            var rentBooks = _context.RentBooks
+                .AsNoTracking()
+                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+
+            var rentBookItems = _context.RentBookItems
+                .AsNoTracking()
+                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+
+            var saleBooks = _context.SaleBooks
+                .AsNoTracking()
+                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+
+            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
+        }
+
+        public BookStatisticsDto GetBookStatisticsByMonth(int year, int month)
+        {
+            var startDate = new DateTime(year, month, 1);
+            var endDate = startDate.AddMonths(1);
+
+            var rentBooks = _context.RentBooks
+                .AsNoTracking()
+                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+
+            var rentBookItems = _context.RentBookItems
+                .AsNoTracking()
+                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+
+            var saleBooks = _context.SaleBooks
+                .AsNoTracking()
+                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+
+            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
+        }
+
+        private BookStatisticsDto BuildStatistics(
+            IQueryable<RentBook> rentBooks,
+            IQueryable<RentBookItem> rentBookItems,
+            IQueryable<SaleBook> saleBooks)
+        {
             return new BookStatisticsDto
             {
-                TotalRentBooks = totalRentBooks,
-                TotalRentBookItems = totalRentBookItems,
-                AvailableRentBookItems = availableRentBookItems,
-                TotalSaleBooks = totalSaleBooks,
-                TotalRentBookValue = totalRentBookValue,
-                TotalSaleBookValue = totalSaleBookValue
+                TotalRentBooks = rentBooks.Count(),
+                TotalRentBookItems = rentBookItems.Count(),
+                AvailableRentBookItems = rentBookItems.Count(x => x.Status == RentBookItemStatus.Available),
+                TotalSaleBooks = saleBooks.Count(),
+                TotalRentBookValue = rentBooks.Sum(x => (decimal?)(x.Price * (decimal)x.Quantity)) ?? 0,
+                TotalSaleBookValue = saleBooks.Sum(x => (decimal?)(x.Price * (decimal)x.Quantity)) ?? 0
             };
         }
-    }
 
+        private DateTime FirstDateOfWeekISO8601(int year, int weekOfYear)
+        {
+            var jan1 = new DateTime(year, 1, 1);
+            int daysOffset = DayOfWeek.Thursday - jan1.DayOfWeek;
+
+            var firstThursday = jan1.AddDays(daysOffset);
+            var cal = System.Globalization.CultureInfo.CurrentCulture.Calendar;
+            int firstWeek = cal.GetWeekOfYear(firstThursday, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+
+            if (firstWeek <= 1)
+                weekOfYear--;
+
+            return firstThursday.AddDays(weekOfYear * 7 - 3);
+        }
+    }
 }

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
+using System.Security.Claims;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -9,10 +11,59 @@ namespace ShopThueBanSach.Server.Controllers
     public class AuthorController : ControllerBase
     {
         private readonly IAuthorService _authorService;
+        private readonly IActivityNotificationService _notificationService;
+        private readonly IStaffService _staffService;
 
-        public AuthorController(IAuthorService authorService)
+        public AuthorController(
+            IAuthorService authorService,
+            IActivityNotificationService notificationService,
+            IStaffService staffService)
         {
             _authorService = authorService;
+            _notificationService = notificationService;
+            _staffService = staffService;
+        }
+
+        private int GetCurrentStaffId()
+        {
+            var staffIdClaim = User.FindFirst("StaffId")?.Value;
+            return int.TryParse(staffIdClaim, out var id) ? id : 0;
+        }
+
+        private async Task CreateNotificationIfValidAsync(string description)
+        {
+            int staffId = GetCurrentStaffId();
+            var staffExists = await _staffService.ExistsAsync(staffId); // Hàm ExistsAsync cần được định nghĩa trong IStaffService
+            if (staffExists)
+            {
+                await _notificationService.CreateNotificationAsync(staffId, description);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] AuthorDto dto)
+        {
+            var created = await _authorService.CreateAsync(dto);
+            await CreateNotificationIfValidAsync($"Thêm tác giả: {dto.Name}");
+            return Ok(created);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] AuthorDto dto)
+        {
+            var updated = await _authorService.UpdateAsync(id, dto);
+            if (updated != null)
+                await CreateNotificationIfValidAsync($"Cập nhật tác giả: {dto.Name}");
+            return updated == null ? NotFound() : Ok(updated);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var result = await _authorService.DeleteAsync(id);
+            if (result)
+                await CreateNotificationIfValidAsync($"Xóa tác giả: {id}");
+            return result ? Ok() : NotFound();
         }
 
         [HttpGet]
@@ -27,27 +78,6 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var author = await _authorService.GetByIdAsync(id);
             return author == null ? NotFound() : Ok(author);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] AuthorDto dto)
-        {
-            var created = await _authorService.CreateAsync(dto);
-            return Ok(created);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] AuthorDto dto)
-        {
-            var updated = await _authorService.UpdateAsync(id, dto);
-            return updated == null ? NotFound() : Ok(updated);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            var result = await _authorService.DeleteAsync(id);
-            return result ? Ok() : NotFound();
         }
     }
 }
