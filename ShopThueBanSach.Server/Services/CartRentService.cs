@@ -48,7 +48,7 @@ namespace ShopThueBanSach.Server.Services
 
             if (item == null || item.RentBook == null) return false;
 
-            var rentalFee = CalculateRentalFee(45); // mặc định 45 ngày
+            var rentalFee = CalculateRentalFee(60); // mặc định 60 ngày
 
             var cartItem = new CartItemRent
             {

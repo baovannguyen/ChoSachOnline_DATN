@@ -85,9 +85,9 @@ namespace ShopThueBanSach.Server.Services
             int rentalDays = (request.EndDate - request.StartDate).Days;
             if (rentalDays <= 0) return new BadRequestObjectResult("Ngày thuê không hợp lệ");
 
-            const decimal baseRentalFee = 20000;
-            const int baseRentalDays = 45;
-            const decimal extraFeePerDay = 3000;
+            const decimal baseRentalFee = 30000;
+            const int baseRentalDays = 60;
+            const decimal extraFeePerDay = 1000;
             const decimal shippingFee = 20000;
 
             decimal totalFee = 0;
