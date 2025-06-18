@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
+using System.Security.Claims;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -12,22 +14,26 @@ namespace ShopThueBanSach.Server.Controllers
         private readonly IAuthorService _authorService;
         private readonly IActivityNotificationService _notificationService;
         private readonly IStaffService _staffService;
-
+        private readonly IHttpContextAccessor _httpContextAccessor;
         public AuthorController(
             IAuthorService authorService,
             IActivityNotificationService notificationService,
+             IHttpContextAccessor httpContextAccessor,
+
             IStaffService staffService)
         {
             _authorService = authorService;
             _notificationService = notificationService;
             _staffService = staffService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         private int? GetCurrentStaffId()
         {
-            var staffIdClaim = User.FindFirst("StaffId")?.Value;
-            return int.TryParse(staffIdClaim, out var id) ? id : null;
+            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
+            return _staffService.GetStaffIdByEmail(claim); // bạn cần cài hàm này
         }
+
 
         private async Task CreateNotificationIfValidAsync(string description)
         {
