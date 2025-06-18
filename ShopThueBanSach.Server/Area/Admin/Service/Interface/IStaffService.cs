@@ -10,6 +10,10 @@ namespace ShopThueBanSach.Server.Area.Admin.Service.Interface
         Task<Staff> UpdateAsync(Staff staff);
         Task<bool> DeleteAsync(int id);
         Task<bool> ExistsAsync(int staffId);
+
+        // 🆕 Thêm hàm này
+        int? GetStaffIdByEmail(string? email);
     }
+
 
 }

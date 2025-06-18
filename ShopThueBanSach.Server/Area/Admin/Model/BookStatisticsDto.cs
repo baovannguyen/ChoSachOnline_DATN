@@ -4,11 +4,16 @@
     {
         // Tổng thể
         public int TotalRentBooks { get; set; }
+        public int TotalSaleBooks { get; set; }
         public int TotalRentBookItems { get; set; }
         public int AvailableRentBookItems { get; set; }
-        public int TotalSaleBooks { get; set; }
         public decimal TotalRentBookValue { get; set; }
         public decimal TotalSaleBookValue { get; set; }
+        //theo ngày
+        public int RentBooksToday { get; set; }
+        public int SaleBooksToday { get; set; }
+        public decimal RentBookValueToday { get; set; }
+        public decimal SaleBookValueToday { get; set; }
 
         // Báo cáo theo tuần
         public int RentBooksThisWeek { get; set; }

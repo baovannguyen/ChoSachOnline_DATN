@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Services.Interfaces;
-using Microsoft.AspNetCore.Authorization;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -9,19 +11,56 @@ namespace ShopThueBanSach.Server.Controllers
     public class ActivityNotificationController : ControllerBase
     {
         private readonly IActivityNotificationService _notificationService;
+        private readonly AppDBContext _context;
 
-        public ActivityNotificationController(IActivityNotificationService notificationService)
+        // ✅ Thêm AppDBContext vào constructor
+        public ActivityNotificationController(
+            IActivityNotificationService notificationService,
+            AppDBContext context)
         {
             _notificationService = notificationService;
+            _context = context;
         }
 
+        // GET: api/ActivityNotification
         [HttpGet]
-     /*   [Authorize(Roles = "Admin")]*/
         public async Task<IActionResult> GetAll()
         {
-            var result = await _notificationService.GetAllNotificationsAsync();
-            return Ok(result);
+            var notifications = await _context.ActivityNotifications
+                .Include(n => n.Staff)
+                .OrderByDescending(n => n.CreatedDate)
+                .Select(n => new
+                {
+                    n.NotificationId,
+                    n.Description,
+                    n.CreatedDate,
+                    StaffId = n.StaffId,
+                    StaffName = n.Staff != null ? n.Staff.FullName : "Unknown"
+                })
+                .ToListAsync();
+
+            return Ok(notifications);
         }
 
+        // GET: api/ActivityNotification/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
+        {
+            var notification = await _context.ActivityNotifications
+                .Include(n => n.Staff)
+                .FirstOrDefaultAsync(n => n.NotificationId == id);
+
+            if (notification == null)
+                return NotFound();
+
+            return Ok(new
+            {
+                notification.NotificationId,
+                notification.Description,
+                notification.CreatedDate,
+                StaffId = notification.StaffId,
+                StaffName = notification.Staff?.FullName ?? "Unknown"
+            });
+        }
     }
 }

@@ -15,53 +15,13 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             _context = context;
         }
 
-        public BookStatisticsDto GetBookStatistics()
+        public async Task<BookStatisticsDto> GetBookStatisticsAsync()
         {
             var rentBooks = _context.RentBooks.AsNoTracking();
             var rentBookItems = _context.RentBookItems.AsNoTracking();
             var saleBooks = _context.SaleBooks.AsNoTracking();
 
-            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
-        }
-
-        public BookStatisticsDto GetBookStatisticsByWeek(int year, int weekNumber)
-        {
-            var startDate = FirstDateOfWeekISO8601(year, weekNumber);
-            var endDate = startDate.AddDays(7);
-
-            var rentBooks = _context.RentBooks
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            var rentBookItems = _context.RentBookItems
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            var saleBooks = _context.SaleBooks
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
-        }
-
-        public BookStatisticsDto GetBookStatisticsByMonth(int year, int month)
-        {
-            var startDate = new DateTime(year, month, 1);
-            var endDate = startDate.AddMonths(1);
-
-            var rentBooks = _context.RentBooks
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            var rentBookItems = _context.RentBookItems
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            var saleBooks = _context.SaleBooks
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
+            return await Task.FromResult(BuildStatistics(rentBooks, rentBookItems, saleBooks));
         }
 
         private BookStatisticsDto BuildStatistics(
@@ -69,30 +29,49 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             IQueryable<RentBookItem> rentBookItems,
             IQueryable<SaleBook> saleBooks)
         {
+            var now = DateTime.Now;
+            var today = now.Date;
+            var startOfWeek = now.AddDays(-(int)now.DayOfWeek + (int)DayOfWeek.Monday).Date;
+            var startOfMonth = new DateTime(now.Year, now.Month, 1);
+
             return new BookStatisticsDto
             {
-                TotalRentBooks = rentBooks.Count(),
+                // Tổng thể
+                TotalRentBooks = rentBooks.Sum(x => (int?)x.Quantity) ?? 0,
                 TotalRentBookItems = rentBookItems.Count(),
                 AvailableRentBookItems = rentBookItems.Count(x => x.Status == RentBookItemStatus.Available),
-                TotalSaleBooks = saleBooks.Count(),
-                TotalRentBookValue = rentBooks.Sum(x => (decimal?)(x.Price * (decimal)x.Quantity)) ?? 0,
-                TotalSaleBookValue = saleBooks.Sum(x => (decimal?)(x.Price * (decimal)x.Quantity)) ?? 0
+                TotalSaleBooks = saleBooks.Sum(x => (int?)x.Quantity) ?? 0,
+                TotalRentBookValue = rentBooks.Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+                TotalSaleBookValue = saleBooks.Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+
+                // Hôm nay
+                RentBooksToday = rentBooks.Where(x => x.CreatedDate.Date == today).Sum(x => (int?)x.Quantity) ?? 0,
+                SaleBooksToday = saleBooks.Where(x => x.CreatedDate.Date == today).Sum(x => (int?)x.Quantity) ?? 0,
+                RentBookValueToday = rentBooks.Where(x => x.CreatedDate.Date == today)
+                                              .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+                SaleBookValueToday = saleBooks.Where(x => x.CreatedDate.Date == today)
+                                              .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+
+                // Tuần này
+                RentBooksThisWeek = rentBooks.Where(x => x.CreatedDate >= startOfWeek)
+                                             .Sum(x => (int?)x.Quantity) ?? 0,
+                SaleBooksThisWeek = saleBooks.Where(x => x.CreatedDate >= startOfWeek)
+                                             .Sum(x => (int?)x.Quantity) ?? 0,
+                RentBookValueThisWeek = rentBooks.Where(x => x.CreatedDate >= startOfWeek)
+                                                 .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+                SaleBookValueThisWeek = saleBooks.Where(x => x.CreatedDate >= startOfWeek)
+                                                 .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+
+                // Tháng này
+                RentBooksThisMonth = rentBooks.Where(x => x.CreatedDate >= startOfMonth)
+                                              .Sum(x => (int?)x.Quantity) ?? 0,
+                SaleBooksThisMonth = saleBooks.Where(x => x.CreatedDate >= startOfMonth)
+                                              .Sum(x => (int?)x.Quantity) ?? 0,
+                RentBookValueThisMonth = rentBooks.Where(x => x.CreatedDate >= startOfMonth)
+                                                  .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+                SaleBookValueThisMonth = saleBooks.Where(x => x.CreatedDate >= startOfMonth)
+                                                  .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
             };
-        }
-
-        private DateTime FirstDateOfWeekISO8601(int year, int weekOfYear)
-        {
-            var jan1 = new DateTime(year, 1, 1);
-            int daysOffset = DayOfWeek.Thursday - jan1.DayOfWeek;
-
-            var firstThursday = jan1.AddDays(daysOffset);
-            var cal = System.Globalization.CultureInfo.CurrentCulture.Calendar;
-            int firstWeek = cal.GetWeekOfYear(firstThursday, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-
-            if (firstWeek <= 1)
-                weekOfYear--;
-
-            return firstThursday.AddDays(weekOfYear * 7 - 3);
         }
     }
 }

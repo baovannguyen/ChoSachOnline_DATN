@@ -20,6 +20,7 @@ namespace ShopThueBanSach.Server
         {
             var builder = WebApplication.CreateBuilder(args);
 
+
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new() { Title = "Identity API", Version = "v1" });

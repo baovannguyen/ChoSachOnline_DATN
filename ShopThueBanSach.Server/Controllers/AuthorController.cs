@@ -2,7 +2,6 @@
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
-using System.Security.Claims;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -24,19 +23,18 @@ namespace ShopThueBanSach.Server.Controllers
             _staffService = staffService;
         }
 
-        private int GetCurrentStaffId()
+        private int? GetCurrentStaffId()
         {
             var staffIdClaim = User.FindFirst("StaffId")?.Value;
-            return int.TryParse(staffIdClaim, out var id) ? id : 0;
+            return int.TryParse(staffIdClaim, out var id) ? id : null;
         }
 
         private async Task CreateNotificationIfValidAsync(string description)
         {
-            int staffId = GetCurrentStaffId();
-            var staffExists = await _staffService.ExistsAsync(staffId); // Hàm ExistsAsync cần được định nghĩa trong IStaffService
-            if (staffExists)
+            var staffId = GetCurrentStaffId();
+            if (staffId.HasValue && await _staffService.ExistsAsync(staffId.Value))
             {
-                await _notificationService.CreateNotificationAsync(staffId, description);
+                await _notificationService.CreateNotificationAsync(staffId.Value, description);
             }
         }
 
@@ -54,6 +52,7 @@ namespace ShopThueBanSach.Server.Controllers
             var updated = await _authorService.UpdateAsync(id, dto);
             if (updated != null)
                 await CreateNotificationIfValidAsync($"Cập nhật tác giả: {dto.Name}");
+
             return updated == null ? NotFound() : Ok(updated);
         }
 
@@ -63,7 +62,8 @@ namespace ShopThueBanSach.Server.Controllers
             var result = await _authorService.DeleteAsync(id);
             if (result)
                 await CreateNotificationIfValidAsync($"Xóa tác giả: {id}");
-            return result ? Ok() : NotFound();
+
+            return result ? NoContent() : NotFound();
         }
 
         [HttpGet]

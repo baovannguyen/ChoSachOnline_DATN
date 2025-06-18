@@ -2,6 +2,7 @@
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
+using System.Security.Claims;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -12,21 +13,23 @@ namespace ShopThueBanSach.Server.Controllers
         private readonly ISaleBookService _service;
         private readonly IActivityNotificationService _notificationService;
         private readonly IStaffService _staffService;
-
+        private readonly IHttpContextAccessor _httpContextAccessor;
         public SaleBooksController(
             ISaleBookService service,
             IActivityNotificationService notificationService,
+             IHttpContextAccessor httpContextAccessor,
             IStaffService staffService)
         {
             _service = service;
             _notificationService = notificationService;
+            _httpContextAccessor = httpContextAccessor;
             _staffService = staffService;
         }
 
         private int? GetCurrentStaffId()
         {
-            var claim = User.FindFirst("StaffId")?.Value;
-            return int.TryParse(claim, out var id) ? id : null;
+            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
+            return _staffService.GetStaffIdByEmail(claim); // bạn cần cài hàm này
         }
 
         private async Task CreateNotificationIfStaffExistsAsync(string description)
@@ -37,12 +40,14 @@ namespace ShopThueBanSach.Server.Controllers
                 await _notificationService.CreateNotificationAsync(staffId.Value, description);
             }
         }
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
@@ -65,7 +70,7 @@ namespace ShopThueBanSach.Server.Controllers
             if (success)
                 await CreateNotificationIfStaffExistsAsync($"Cập nhật sách bán: {dto.Title}");
 
-            return success ? Ok() : NotFound();
+            return success ? NoContent() : NotFound();
         }
 
         [HttpDelete("{id}")]
@@ -82,13 +87,13 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> SetVisibility(string id, int isHidden)
         {
             if (isHidden != 0 && isHidden != 1)
-                return BadRequest("isHidden phải là 0 hoặc 1");
+                return BadRequest("Giá trị isHidden chỉ được là 0 (hiện) hoặc 1 (ẩn)");
 
             var success = await _service.SetVisibilityAsync(id, isHidden == 1);
             if (success)
-                await CreateNotificationIfStaffExistsAsync($"Thay đổi hiển thị sách bán: {id} -> {(isHidden == 1 ? "ẩn" : "hiện")}");
+                await CreateNotificationIfStaffExistsAsync($"Cập nhật hiển thị sách bán: {id} -> {(isHidden == 1 ? "ẩn" : "hiện")}");
 
-            return success ? Ok() : NotFound();
+            return success ? NoContent() : NotFound();
         }
     }
 }

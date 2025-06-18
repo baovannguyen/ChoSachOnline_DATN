@@ -14,10 +14,10 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             _reportService = reportService;
         }
 
-        [HttpGet("book-statistics")]
-        public IActionResult GetBookStatistics()
+        [HttpGet("statistics")]
+        public async Task<IActionResult> GetStatistics()
         {
-            var result = _reportService.GetBookStatistics();
+            var result = await _reportService.GetBookStatisticsAsync();
             return Ok(result);
         }
     }
