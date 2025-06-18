@@ -328,6 +328,34 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("FavoriteBooks");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Payment", b =>
+                {
+                    b.Property<string>("PaymentId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("PaymentId");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.ToTable("Payments");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Promotion", b =>
                 {
                     b.Property<string>("PromotionId")
@@ -481,6 +509,89 @@ namespace ShopThueBanSach.Server.Migrations
                     b.HasIndex("RentBookId");
 
                     b.ToTable("RentBookItems");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrder", b =>
+                {
+                    b.Property<string>("OrderId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("HasShippingFee")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RentalDays")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ShippingFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalDeposit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("OrderId");
+
+                    b.ToTable("RentOrders");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrderDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("BookPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BookTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Condition")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RentBookItemId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("RentalFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("RentBookItemId");
+
+                    b.ToTable("RentOrderDetails");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
@@ -772,6 +883,17 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Payment", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", "Order")
+                        .WithOne("Payment")
+                        .HasForeignKey("ShopThueBanSach.Server.Entities.Payment", "OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.AuthorRentBook", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", "Author")
@@ -859,6 +981,25 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("RentBook");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrderDetail", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentBookItem", "RentBookItem")
+                        .WithMany()
+                        .HasForeignKey("RentBookItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("RentBookItem");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.Promotion", "Promotion")
@@ -915,6 +1056,11 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("CategoryRentBooks");
 
                     b.Navigation("RentBookItems");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrder", b =>
+                {
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>

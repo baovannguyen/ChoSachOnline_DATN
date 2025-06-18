@@ -3,3 +3,4 @@ D:\DATN\Final\ChoSachOnline_DATN\shopthuebansach.client\obj\Debug\shopthuebansac
 C:\Users\win11\Source\Repos\ChoSachOnline_DATN\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
 C:\Users\Minh Tri\Documents\Full đồ án\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
 C:\Users\Minh Tri\Documents\gopcode\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
+D:\DATN\gopsrc\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache

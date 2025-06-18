@@ -22,7 +22,20 @@ namespace ShopThueBanSach.Server.Controllers
             _notificationService = notificationService;
             _staffService = staffService;
         }
-
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var list = await _rentBookItemService.GetAllAsync();
+            return Ok(list.Select(x => new
+            {
+                x.RentBookItemId,
+                x.RentBookId,
+                x.RentBookTitle,
+                status = x.Status.ToString(), // Convert to string
+                x.Condition,
+                x.IsHidden
+            }));
+        }
         private int? GetCurrentStaffId()
         {
             var claim = User.FindFirst("StaffId")?.Value;

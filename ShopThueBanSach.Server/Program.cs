@@ -8,6 +8,7 @@ using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Models;
+using ShopThueBanSach.Server.Models.PaymentMethod;
 using ShopThueBanSach.Server.Services;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Text;
@@ -19,7 +20,14 @@ namespace ShopThueBanSach.Server
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromHours(2);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            }); // Thêm bộ nhớ đệm cho Session
+            builder.Services.AddHttpContextAccessor(); // cần để lấy Session
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new() { Title = "Identity API", Version = "v1" });
@@ -85,6 +93,11 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IVoucherService, VoucherService>();
             // Đăng ký dịch vụ FavoriteBookService
             builder.Services.AddScoped<IFavoriteBookService, FavoriteBookService>();
+            builder.Services.AddScoped<ICartRentService, CartRentService>();
+            builder.Services.AddScoped<IRentOrderService, RentOrderService>();
+            builder.Services.Configure<MomoConfig>(builder.Configuration.GetSection("Momo"));
+            builder.Services.AddScoped<IMoMoPaymentService, MoMoPaymentService>();
+            builder.Services.AddScoped<IMoMoCallbackService, MoMoCallbackService>();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -119,12 +132,22 @@ namespace ShopThueBanSach.Server
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
                 };
             });
-
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowClientApp",
+                    builder =>
+                    {
+                        builder.WithOrigins("http://localhost:8080") // duong dan front-end
+                               .AllowAnyHeader()
+                               .AllowAnyMethod()
+                               .AllowCredentials(); // Nếu dùng cookie hoặc session
+                    });
+            });
             var app = builder.Build();
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
-
+            app.UseSession();
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -141,7 +164,7 @@ namespace ShopThueBanSach.Server
                 await SeedData.InitializeAsync(services);
             }
             app.UseHttpsRedirection();
-
+            app.UseCors("AllowClientApp");
             app.UseAuthentication();
             app.UseAuthorization();
 
