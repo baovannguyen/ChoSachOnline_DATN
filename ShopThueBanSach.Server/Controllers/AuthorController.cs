@@ -13,30 +13,31 @@ namespace ShopThueBanSach.Server.Controllers
         private readonly IAuthorService _authorService;
         private readonly IActivityNotificationService _notificationService;
         private readonly IStaffService _staffService;
-
+        private readonly IHttpContextAccessor _httpContextAccessor;
         public AuthorController(
             IAuthorService authorService,
             IActivityNotificationService notificationService,
+             IHttpContextAccessor httpContextAccessor,
+
             IStaffService staffService)
         {
             _authorService = authorService;
             _notificationService = notificationService;
             _staffService = staffService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        private int GetCurrentStaffId()
+        private int? GetCurrentStaffId()
         {
-            var staffIdClaim = User.FindFirst("StaffId")?.Value;
-            return int.TryParse(staffIdClaim, out var id) ? id : 0;
+            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
+            return _staffService.GetStaffIdByEmail(claim); // bạn cần cài hàm này
         }
-
         private async Task CreateNotificationIfValidAsync(string description)
         {
-            int staffId = GetCurrentStaffId();
-            var staffExists = await _staffService.ExistsAsync(staffId); // Hàm ExistsAsync cần được định nghĩa trong IStaffService
-            if (staffExists)
+            var staffId = GetCurrentStaffId();
+            if (staffId.HasValue && await _staffService.ExistsAsync(staffId.Value))
             {
-                await _notificationService.CreateNotificationAsync(staffId, description);
+                await _notificationService.CreateNotificationAsync(staffId.Value, description);
             }
         }
 

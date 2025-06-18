@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Security.Claims;
-using ShopThueBanSach.Server.Data; // <-- Add
-using Microsoft.EntityFrameworkCore; // <-- Add
+using ShopThueBanSach.Server.Data;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -49,60 +48,29 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var result = await _service.CreateAsync(dto);
 
-            var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
-
-            int? staffId = null;
-            if (!string.IsNullOrEmpty(userEmail))
-            {
-                var staff = await _dbContext.Staffs.FirstOrDefaultAsync(s => s.Email == userEmail);
-                if (staff != null)
-                {
-                    staffId = staff.StaffId;
-                }
-            }
-
+            var staffId = await GetCurrentStaffIdAsync();
             if (staffId != null)
             {
-                var description = $"Staff added new category: {dto.CategoryName}";
+                var description = $"🟢 Staff đã thêm 1 thể loại mới: {dto.CategoryName}";
                 await _notificationService.CreateNotificationAsync(staffId.Value, description);
             }
-            else
-            {
-                Console.WriteLine("⚠ Không tìm thấy Staff tương ứng với email hiện tại.");
-            }
 
             return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
         }
-
-        // ... các phương thức khác giữ nguyên
-    
-        /*[HttpPost]
-        public async Task<IActionResult> Create(CategoryDto dto)
-        {
-            var result = await _service.CreateAsync(dto);
-
-            // 🔔 Tạo thông báo – gán userId tạm thời để kiểm tra
-            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            // Nếu không có userId thì gán thủ công để test
-            if (string.IsNullOrEmpty(userId))
-            {
-                userId = "test-user-id"; // 👈 Gán tạm userId (bạn có thể dùng ID thực từ bảng User)
-            }
-
-            var description = $"User added new category: {dto.CategoryName}";
-            await _notificationService.CreateNotificationAsync(userId, description);
-            Console.WriteLine($"[Thông báo] Đã tạo thông báo: {description} (userId = {userId})");
-
-            return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
-        }
-*/
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, CategoryDto dto)
         {
             var result = await _service.UpdateAsync(id, dto);
             if (result == null) return NotFound();
+
+            var staffId = await GetCurrentStaffIdAsync();
+            if (staffId != null)
+            {
+                var description = $"🟡 Staff đã cập nhật thể loại: {dto.CategoryName} (ID: {id})";
+                await _notificationService.CreateNotificationAsync(staffId.Value, description);
+            }
+
             return Ok(result);
         }
 
@@ -111,7 +79,38 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var success = await _service.DeleteAsync(id);
             if (!success) return NotFound();
+
+            var staffId = await GetCurrentStaffIdAsync();
+            if (staffId != null)
+            {
+                var description = $"🔴 Staff đã sửa thể loại : {id}";
+                await _notificationService.CreateNotificationAsync(staffId.Value, description);
+            }
+
             return NoContent();
         }
+
+        private async Task<int?> GetCurrentStaffIdAsync()
+        {
+            // ✅ Sử dụng ClaimTypes.Name thay vì Email
+            var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
+
+            Console.WriteLine($"🔍 Email from token: {userEmail}");
+
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                // 🔍 Đảm bảo email trong bảng Staff là duy nhất
+                var staff = await _dbContext.Staffs.FirstOrDefaultAsync(s => s.Email == userEmail);
+                if (staff != null)
+                {
+                    Console.WriteLine($"✅ Found StaffId: {staff.StaffId} for email {userEmail}");
+                    return staff.StaffId;
+                }
+            }
+
+            Console.WriteLine("⚠ Không tìm thấy Staff tương ứng với email hiện tại.");
+            return null;
+        }
+
     }
 }
