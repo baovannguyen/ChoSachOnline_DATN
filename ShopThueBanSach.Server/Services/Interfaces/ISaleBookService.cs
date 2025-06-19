@@ -10,5 +10,6 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<bool> UpdateAsync(string id, SaleBookDto dto);   // Thêm method update
         Task<bool> DeleteAsync(string id);
         Task<bool> SetVisibilityAsync(string id, bool isHidden);
+        Task<bool> CheckTitleExistsAsync(string title, string? excludeId = null);
     }
 }

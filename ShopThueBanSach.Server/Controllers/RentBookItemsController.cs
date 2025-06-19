@@ -71,22 +71,43 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] RentBookItemDto dto)
         {
-            dto.RentBookItemId = null;
-            var created = await _rentBookItemService.CreateAsync(dto);
-            if (created == null) return BadRequest("Điều kiện phải từ 0 đến 100");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            await CreateNotificationIfStaffExistsAsync($"Thêm bản sao sách thuê cho sách: {dto.RentBookId}");
-            return CreatedAtAction(nameof(GetById), new { id = created.RentBookItemId }, created);
+            if (dto.Condition < 80 || dto.Condition > 100)
+                return BadRequest(new { message = "Tình trạng sách phải từ 80 đến 100 mới có thể cho thuê." });
+
+            dto.RentBookItemId = null;
+
+            try
+            {
+                var created = await _rentBookItemService.CreateAsync(dto);
+                if (created == null)
+                    return BadRequest("Không thể tạo RentBookItem.");
+
+                return CreatedAtAction(nameof(GetById), new { id = created.RentBookItemId }, created);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
+
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] RentBookItemDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (dto.Condition < 80 || dto.Condition > 100)
+                return BadRequest(new { message = "Tình trạng sách phải từ 80 đến 100 mới có thể cho thuê." });
+
             var updated = await _rentBookItemService.UpdateAsync(id, dto);
             if (updated == null)
-                return BadRequest("Cập nhật thất bại. Kiểm tra ID hoặc điều kiện.");
+                return NotFound(new { message = "Không tìm thấy hoặc không thể cập nhật RentBookItem." });
 
-            await CreateNotificationIfStaffExistsAsync($"Cập nhật bản sao sách thuê: {id}");
             return Ok(updated);
         }
 

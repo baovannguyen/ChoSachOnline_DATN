@@ -26,15 +26,35 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(PromotionDTO model)
+        public async Task<IActionResult> Create([FromBody] PromotionDTO model)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (model.PromotionName?.Trim().ToLower() == "string")
+                return BadRequest(new { message = "Tên khuyến mãi không hợp lệ." });
+
+            var isDuplicate = await _service.CheckNameExistsAsync(model.PromotionName);
+            if (isDuplicate)
+                return BadRequest(new { message = "Tên khuyến mãi đã tồn tại." });
+
             var result = await _service.CreatePromotionAsync(model);
             return result ? Ok() : BadRequest();
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, PromotionDTO model)
+        public async Task<IActionResult> Update(string id, [FromBody] PromotionDTO model)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (model.PromotionName?.Trim().ToLower() == "string")
+                return BadRequest(new { message = "Tên khuyến mãi không hợp lệ." });
+
+            var isDuplicate = await _service.CheckNameExistsAsync(model.PromotionName, id);
+            if (isDuplicate)
+                return BadRequest(new { message = "Tên khuyến mãi đã tồn tại." });
+
             var result = await _service.UpdatePromotionAsync(id, model);
             return result ? Ok() : NotFound();
         }

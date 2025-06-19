@@ -14,6 +14,7 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<bool> UpdateAsync(string id, RentBookDto dto);
         Task<bool> DeleteAsync(string id);
         Task<bool> SetVisibilityAsync(string id, bool isHidden);
+        Task<bool> CheckTitleExistsAsync(string title, string? excludeId = null);
     }
 
 }

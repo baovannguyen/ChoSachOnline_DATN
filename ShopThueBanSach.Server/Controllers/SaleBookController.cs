@@ -31,25 +31,40 @@ namespace ShopThueBanSach.Server.Controllers
             return Ok(result);
         }
 
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateSaleBookDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
+                return BadRequest(new { message = "Tiêu đề và nhà xuất bản không được để là 'string'." });
+
+            if (await _service.CheckTitleExistsAsync(dto.Title))
+                return BadRequest(new { message = "Tiêu đề sách đã tồn tại." });
+
             var id = await _service.CreateAsync(dto);
-            var result = await _service.GetByIdAsync(id); // ✅ Lấy lại dữ liệu đã tạo
-            return CreatedAtAction(nameof(GetById), new { id }, result); // ✅ Trả về SaleBookDto
+            var result = await _service.GetByIdAsync(id);
+            return CreatedAtAction(nameof(GetById), new { id }, result);
         }
+
 
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] SaleBookDto dto)
         {
-            if (dto == null) return BadRequest();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            // Gán id từ route vào service, dto không chứa id
+            if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
+                return BadRequest(new { message = "Tiêu đề và nhà xuất bản không được để là 'string'." });
+
+            if (await _service.CheckTitleExistsAsync(dto.Title, id))
+                return BadRequest(new { message = "Tiêu đề sách đã tồn tại." });
+
             var success = await _service.UpdateAsync(id, dto);
-            if (!success) return NotFound();
-
-            return Ok();
+            return success ? Ok() : NotFound();
         }
 
 

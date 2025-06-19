@@ -43,6 +43,18 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] AuthorDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Kiểm tra nếu người dùng nhập "string" cho Name hoặc Description
+            if (dto.Name?.Trim().ToLower() == "string" || dto.Description?.Trim().ToLower() == "string")
+            {
+                return BadRequest(new
+                {
+                    message = "Tên tác giả và mô tả không được để là 'string'. Vui lòng nhập nội dung hợp lệ."
+                });
+            }
+
             var created = await _authorService.CreateAsync(dto);
             await CreateNotificationIfValidAsync($"Thêm tác giả: {dto.Name}");
             return Ok(created);
@@ -51,9 +63,22 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] AuthorDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Kiểm tra nếu người dùng nhập "string" cho Name hoặc Description
+            if (dto.Name?.Trim().ToLower() == "string" || dto.Description?.Trim().ToLower() == "string")
+            {
+                return BadRequest(new
+                {
+                    message = "Tên tác giả và mô tả không được để là 'trống'. Vui lòng nhập nội dung hợp lệ."
+                });
+            }
+
             var updated = await _authorService.UpdateAsync(id, dto);
             if (updated != null)
                 await CreateNotificationIfValidAsync($"Cập nhật tác giả: {dto.Name}");
+
             return updated == null ? NotFound() : Ok(updated);
         }
 

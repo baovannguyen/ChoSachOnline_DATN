@@ -101,5 +101,19 @@ namespace ShopThueBanSach.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> CheckNameExistsAsync(string promotionName, string? excludeId = null)
+        {
+            var query = _context.Promotions
+                .Where(p => p.PromotionName.ToLower() == promotionName.Trim().ToLower());
+
+            if (!string.IsNullOrEmpty(excludeId))
+            {
+                query = query.Where(p => p.PromotionId != excludeId);
+            }
+
+            return await query.AnyAsync();
+        }
+
     }
 }
+

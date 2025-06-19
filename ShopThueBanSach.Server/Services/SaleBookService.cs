@@ -192,5 +192,12 @@ namespace ShopThueBanSach.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> CheckTitleExistsAsync(string title, string? excludeId = null)
+        {
+            var query = _context.SaleBooks.Where(b => b.Title.ToLower() == title.Trim().ToLower());
+            if (!string.IsNullOrEmpty(excludeId))
+                query = query.Where(b => b.SaleBookId != excludeId);
+            return await query.AnyAsync();
+        }
     }
 }

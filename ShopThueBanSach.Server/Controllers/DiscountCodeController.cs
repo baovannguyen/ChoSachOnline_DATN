@@ -28,16 +28,48 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(DiscountCodeDTO model)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Chặn tên mặc định "string"
+            if (model.DiscountCodeName?.Trim().ToLower() == "string" ||
+                model.Description?.Trim().ToLower() == "string")
+            {
+                return BadRequest(new { message = "Tên mã và mô tả không được để là 'trống'." });
+            }
+
+            // Kiểm tra ngày
+            if (model.EndDate <= model.StartDate)
+            {
+                return BadRequest(new { message = "Ngày kết thúc phải sau ngày bắt đầu." });
+            }
+
             var result = await _service.CreateAsync(model);
-            return result ? Ok() : BadRequest();
+            return result ? Ok() : BadRequest(new { message = "Tạo mã giảm giá thất bại." });
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, DiscountCodeDTO model)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (model.DiscountCodeName?.Trim().ToLower() == "string" ||
+                model.Description?.Trim().ToLower() == "string")
+            {
+                return BadRequest(new { message = "Tên mã và mô tả không được để là 'trống'." });
+            }
+
+            if (model.EndDate <= model.StartDate)
+            {
+                return BadRequest(new { message = "Ngày kết thúc phải sau ngày bắt đầu." });
+            }
+
             var result = await _service.UpdateAsync(id, model);
             return result ? Ok() : NotFound();
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)

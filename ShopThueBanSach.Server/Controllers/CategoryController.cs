@@ -47,6 +47,23 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CategoryDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (dto.CategoryName?.Trim().ToLower() == "string" || dto.Description?.Trim().ToLower() == "string")
+            {
+                return BadRequest(new { message = "Tên thể loại và mô tả không được để là 'string'." });
+            }
+
+            // ❗ Kiểm tra trùng tên
+            bool isDuplicate = await _dbContext.Categories
+    .AnyAsync(c => c.Name.ToLower() == dto.CategoryName.Trim().ToLower());
+
+            if (isDuplicate)
+            {
+                return BadRequest(new { message = "Tên thể loại đã tồn tại. Vui lòng nhập tên khác." });
+            }
+
             var result = await _service.CreateAsync(dto);
 
             var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
