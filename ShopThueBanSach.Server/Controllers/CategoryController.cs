@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Security.Claims;
-using ShopThueBanSach.Server.Data; // <-- Add
-using Microsoft.EntityFrameworkCore; // <-- Add
+using ShopThueBanSach.Server.Data;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -29,6 +28,32 @@ namespace ShopThueBanSach.Server.Controllers
             _dbContext = dbContext;
         }
 
+        /* ------------------ Helper lấy StaffId ------------------ */
+        private async Task<string?> GetCurrentStaffIdAsync()
+        {
+            // Giả định ClaimTypes.Name chứa email
+            var userEmail = _httpContextAccessor.HttpContext?.User?
+                                         .FindFirst(ClaimTypes.Name)?.Value;
+
+            if (string.IsNullOrEmpty(userEmail)) return null;
+
+            return await _dbContext.Staffs
+                                   .Where(s => s.Email == userEmail && s.Role == "Staff")
+                                   .Select(s => s.StaffId)
+                                   .FirstOrDefaultAsync();
+        }
+
+        private async Task NotifyAsync(string description)
+        {
+            var staffId = await GetCurrentStaffIdAsync();
+            if (!string.IsNullOrEmpty(staffId))
+            {
+                await _notificationService.CreateNotificationAsync(staffId, description);
+            }
+        }
+        /* -------------------------------------------------------- */
+
+        /* ----------------------- CRUD --------------------------- */
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -40,69 +65,25 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> GetById(string id)
         {
             var result = await _service.GetByIdAsync(id);
-            if (result == null) return NotFound();
-            return Ok(result);
+            return result == null ? NotFound() : Ok(result);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(CategoryDto dto)
         {
             var result = await _service.CreateAsync(dto);
-
-            var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
-
-            int? staffId = null;
-            if (!string.IsNullOrEmpty(userEmail))
-            {
-                var staff = await _dbContext.Staffs.FirstOrDefaultAsync(s => s.Email == userEmail);
-                if (staff != null)
-                {
-                    staffId = staff.StaffId;
-                }
-            }
-
-            if (staffId != null)
-            {
-                var description = $"Staff added new category: {dto.CategoryName}";
-                await _notificationService.CreateNotificationAsync(staffId.Value, description);
-            }
-            else
-            {
-                Console.WriteLine("⚠ Không tìm thấy Staff tương ứng với email hiện tại.");
-            }
+            await NotifyAsync($"🟢 Thêm thể loại mới: {dto.CategoryName}");
 
             return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
         }
-
-        // ... các phương thức khác giữ nguyên
-    
-        /*[HttpPost]
-        public async Task<IActionResult> Create(CategoryDto dto)
-        {
-            var result = await _service.CreateAsync(dto);
-
-            // 🔔 Tạo thông báo – gán userId tạm thời để kiểm tra
-            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            // Nếu không có userId thì gán thủ công để test
-            if (string.IsNullOrEmpty(userId))
-            {
-                userId = "test-user-id"; // 👈 Gán tạm userId (bạn có thể dùng ID thực từ bảng User)
-            }
-
-            var description = $"User added new category: {dto.CategoryName}";
-            await _notificationService.CreateNotificationAsync(userId, description);
-            Console.WriteLine($"[Thông báo] Đã tạo thông báo: {description} (userId = {userId})");
-
-            return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
-        }
-*/
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, CategoryDto dto)
         {
             var result = await _service.UpdateAsync(id, dto);
             if (result == null) return NotFound();
+
+            await NotifyAsync($"🟡 Cập nhật thể loại: {dto.CategoryName} (ID: {id})");
             return Ok(result);
         }
 
@@ -111,7 +92,10 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var success = await _service.DeleteAsync(id);
             if (!success) return NotFound();
+
+            await NotifyAsync($"🔴 Xóa thể loại: {id}");
             return NoContent();
         }
+        /* -------------------------------------------------------- */
     }
 }

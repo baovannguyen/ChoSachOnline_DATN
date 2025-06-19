@@ -2,8 +2,7 @@
 {
     public interface IActivityNotificationService
     {
-        Task CreateNotificationAsync(int staffId, string description);
-        Task<List<ActivityNotification>> GetAllNotificationsAsync();
+        Task CreateNotificationAsync(string staffId, string description);
     }
 
 }

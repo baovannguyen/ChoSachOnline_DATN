@@ -1,8 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ShopThueBanSach.Server.Area.Admin.Model;
 using ShopThueBanSach.Server.Area.Admin.Models;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ShopThueBanSach.Server.Area.Admin.Service
 {
@@ -15,84 +19,95 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             _context = context;
         }
 
-        public BookStatisticsDto GetBookStatistics()
+        // ===== 1. DTO gộp (đủ 4 phần) =====
+        public async Task<BookStatisticsDto> GetBookStatisticsAsync()
         {
             var rentBooks = _context.RentBooks.AsNoTracking();
             var rentBookItems = _context.RentBookItems.AsNoTracking();
             var saleBooks = _context.SaleBooks.AsNoTracking();
 
-            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
+            return await Task.FromResult(BuildStatistics(rentBooks, rentBookItems, saleBooks));
         }
 
-        public BookStatisticsDto GetBookStatisticsByWeek(int year, int weekNumber)
-        {
-            var startDate = FirstDateOfWeekISO8601(year, weekNumber);
-            var endDate = startDate.AddDays(7);
+        // ===== 2. Từng DTO riêng lẻ =====
+        public async Task<OverviewStatisticsDto> GetOverviewStatisticsAsync()
+            => (await GetBookStatisticsAsync()).Overview;
 
-            var rentBooks = _context.RentBooks
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+        public async Task<DailyStatisticsDto> GetDailyStatisticsAsync()
+            => (await GetBookStatisticsAsync()).Daily;
 
-            var rentBookItems = _context.RentBookItems
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+        public async Task<WeeklyStatisticsDto> GetWeeklyStatisticsAsync()
+            => (await GetBookStatisticsAsync()).Weekly;
 
-            var saleBooks = _context.SaleBooks
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
+        public async Task<MonthlyStatisticsDto> GetMonthlyStatisticsAsync()
+            => (await GetBookStatisticsAsync()).Monthly;
 
-            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
-        }
-
-        public BookStatisticsDto GetBookStatisticsByMonth(int year, int month)
-        {
-            var startDate = new DateTime(year, month, 1);
-            var endDate = startDate.AddMonths(1);
-
-            var rentBooks = _context.RentBooks
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            var rentBookItems = _context.RentBookItems
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            var saleBooks = _context.SaleBooks
-                .AsNoTracking()
-                .Where(x => x.CreatedDate >= startDate && x.CreatedDate < endDate);
-
-            return BuildStatistics(rentBooks, rentBookItems, saleBooks);
-        }
-
+        // ===== PRIVATE: tính toán toàn bộ =====
         private BookStatisticsDto BuildStatistics(
             IQueryable<RentBook> rentBooks,
             IQueryable<RentBookItem> rentBookItems,
             IQueryable<SaleBook> saleBooks)
         {
-            return new BookStatisticsDto
+            var now = DateTime.Now;
+            var today = now.Date;
+            var startOfWeek = now.AddDays(-(int)now.DayOfWeek + (int)DayOfWeek.Monday).Date;
+            var startOfMonth = new DateTime(now.Year, now.Month, 1);
+
+            // 1. Tổng quan
+            var overview = new OverviewStatisticsDto
             {
-                TotalRentBooks = rentBooks.Count(),
+                TotalRentBooks = rentBooks.Sum(x => (int?)x.Quantity) ?? 0,
+                TotalSaleBooks = saleBooks.Sum(x => (int?)x.Quantity) ?? 0,
                 TotalRentBookItems = rentBookItems.Count(),
                 AvailableRentBookItems = rentBookItems.Count(x => x.Status == RentBookItemStatus.Available),
-                TotalSaleBooks = saleBooks.Count(),
-                TotalRentBookValue = rentBooks.Sum(x => (decimal?)(x.Price * (decimal)x.Quantity)) ?? 0,
-                TotalSaleBookValue = saleBooks.Sum(x => (decimal?)(x.Price * (decimal)x.Quantity)) ?? 0
+                TotalRentBookValue = rentBooks.Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+                TotalSaleBookValue = saleBooks.Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
             };
-        }
 
-        private DateTime FirstDateOfWeekISO8601(int year, int weekOfYear)
-        {
-            var jan1 = new DateTime(year, 1, 1);
-            int daysOffset = DayOfWeek.Thursday - jan1.DayOfWeek;
+            // 2. Hôm nay
+            var daily = new DailyStatisticsDto
+            {
+                RentBooksToday = rentBooks.Where(x => x.CreatedDate.Date == today).Sum(x => (int?)x.Quantity) ?? 0,
+                SaleBooksToday = saleBooks.Where(x => x.CreatedDate.Date == today).Sum(x => (int?)x.Quantity) ?? 0,
+                RentBookValueToday = rentBooks.Where(x => x.CreatedDate.Date == today)
+                                              .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+                SaleBookValueToday = saleBooks.Where(x => x.CreatedDate.Date == today)
+                                              .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
+            };
 
-            var firstThursday = jan1.AddDays(daysOffset);
-            var cal = System.Globalization.CultureInfo.CurrentCulture.Calendar;
-            int firstWeek = cal.GetWeekOfYear(firstThursday, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+            // 3. Tuần này
+            var weekly = new WeeklyStatisticsDto
+            {
+                RentBooksThisWeek = rentBooks.Where(x => x.CreatedDate >= startOfWeek)
+                                                 .Sum(x => (int?)x.Quantity) ?? 0,
+                SaleBooksThisWeek = saleBooks.Where(x => x.CreatedDate >= startOfWeek)
+                                                 .Sum(x => (int?)x.Quantity) ?? 0,
+                RentBookValueThisWeek = rentBooks.Where(x => x.CreatedDate >= startOfWeek)
+                                                 .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+                SaleBookValueThisWeek = saleBooks.Where(x => x.CreatedDate >= startOfWeek)
+                                                 .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
+            };
 
-            if (firstWeek <= 1)
-                weekOfYear--;
+            // 4. Tháng này
+            var monthly = new MonthlyStatisticsDto
+            {
+                RentBooksThisMonth = rentBooks.Where(x => x.CreatedDate >= startOfMonth)
+                                                  .Sum(x => (int?)x.Quantity) ?? 0,
+                SaleBooksThisMonth = saleBooks.Where(x => x.CreatedDate >= startOfMonth)
+                                                  .Sum(x => (int?)x.Quantity) ?? 0,
+                RentBookValueThisMonth = rentBooks.Where(x => x.CreatedDate >= startOfMonth)
+                                                  .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
+                SaleBookValueThisMonth = saleBooks.Where(x => x.CreatedDate >= startOfMonth)
+                                                  .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
+            };
 
-            return firstThursday.AddDays(weekOfYear * 7 - 3);
+            return new BookStatisticsDto
+            {
+                Overview = overview,
+                Daily = daily,
+                Weekly = weekly,
+                Monthly = monthly
+            };
         }
     }
 }

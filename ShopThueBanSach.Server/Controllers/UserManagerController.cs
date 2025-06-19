@@ -15,27 +15,31 @@ namespace ShopThueBanSach.Server.Controllers
             _userService = userService;
         }
 
+        // GET api/usermanager
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var users = await _userService.GetAllAsync();
+            var users = await _userService.GetAllAsync();   // đã lọc trong service
             return Ok(users);
         }
 
+        // GET api/usermanager/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
-            var user = await _userService.GetByIdAsync(id);
+            var user = await _userService.GetByIdAsync(id); // service tự trả null nếu không đúng role
             return user == null ? NotFound() : Ok(user);
         }
 
-        [HttpPut]
+        // PUT api/usermanager
+        [HttpPut("{id}")]
         public async Task<IActionResult> Update(UpdateUserDto dto)
         {
             var success = await _userService.UpdateAsync(dto);
             return success ? Ok() : NotFound();
         }
 
+        // DELETE api/usermanager/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {

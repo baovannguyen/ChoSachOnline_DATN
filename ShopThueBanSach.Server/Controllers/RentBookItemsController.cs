@@ -2,6 +2,7 @@
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
+using System.Security.Claims;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -22,6 +23,7 @@ namespace ShopThueBanSach.Server.Controllers
             _notificationService = notificationService;
             _staffService = staffService;
         }
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -31,23 +33,25 @@ namespace ShopThueBanSach.Server.Controllers
                 x.RentBookItemId,
                 x.RentBookId,
                 x.RentBookTitle,
-                status = x.Status.ToString(), // Convert to string
+                status = x.Status.ToString(),
                 x.Condition,
                 x.IsHidden
             }));
         }
-        private int? GetCurrentStaffId()
+
+        // ✅ Đổi từ int? sang string?
+        private string? GetCurrentStaffId()
         {
             var claim = User.FindFirst("StaffId")?.Value;
-            return int.TryParse(claim, out var id) ? id : null;
+            return !string.IsNullOrEmpty(claim) ? claim : null;
         }
 
         private async Task CreateNotificationIfStaffExistsAsync(string description)
         {
             var staffId = GetCurrentStaffId();
-            if (staffId.HasValue && await _staffService.ExistsAsync(staffId.Value))
+            if (!string.IsNullOrEmpty(staffId) && await _staffService.ExistsAsync(staffId))
             {
-                await _notificationService.CreateNotificationAsync(staffId.Value, description);
+                await _notificationService.CreateNotificationAsync(staffId, description);
             }
         }
 

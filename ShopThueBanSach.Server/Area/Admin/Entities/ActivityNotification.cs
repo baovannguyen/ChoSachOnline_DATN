@@ -8,7 +8,7 @@ public class ActivityNotification
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public string NotificationId { get; set; }
 
-    public int StaffId { get; set; }  // Đổi từ UserId thành StaffId
+    public String StaffId { get; set; } = Guid.NewGuid().ToString(); // Đổi từ UserId thành StaffId
 
     public string Description { get; set; }
 

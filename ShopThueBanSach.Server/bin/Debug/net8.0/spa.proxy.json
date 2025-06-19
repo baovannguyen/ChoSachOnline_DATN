@@ -3,7 +3,7 @@
 "ServerUrl": "https://localhost:55979",
 "RedirectUrl": "",
 "LaunchCommand": "npm run dev",
-"WorkingDirectory": "D:\\DATN\\gopsrc\\ShopThueBanSach.Server\\..\\shopthuebansach.client",
+"WorkingDirectory": "C:\\Users\\win11\\source\\repos\\BaoQuy\\ShopThueBanSach.Server\\..\\shopthuebansach.client",
 "MaxTimeoutInSeconds": "120",
 "KeepRunning": "false"
 }

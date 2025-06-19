@@ -1,25 +1,13 @@
-﻿namespace ShopThueBanSach.Server.Area.Admin.Models
+﻿using ShopThueBanSach.Server.Area.Admin.Model;
+
+namespace ShopThueBanSach.Server.Area.Admin.Models
 {
+    // 5. DTO gốc – gom cả 4 phần
     public class BookStatisticsDto
     {
-        // Tổng thể
-        public int TotalRentBooks { get; set; }
-        public int TotalRentBookItems { get; set; }
-        public int AvailableRentBookItems { get; set; }
-        public int TotalSaleBooks { get; set; }
-        public decimal TotalRentBookValue { get; set; }
-        public decimal TotalSaleBookValue { get; set; }
-
-        // Báo cáo theo tuần
-        public int RentBooksThisWeek { get; set; }
-        public int SaleBooksThisWeek { get; set; }
-        public decimal RentBookValueThisWeek { get; set; }
-        public decimal SaleBookValueThisWeek { get; set; }
-
-        // Báo cáo theo tháng
-        public int RentBooksThisMonth { get; set; }
-        public int SaleBooksThisMonth { get; set; }
-        public decimal RentBookValueThisMonth { get; set; }
-        public decimal SaleBookValueThisMonth { get; set; }
+        public OverviewStatisticsDto Overview { get; set; } = default!;
+        public DailyStatisticsDto Daily { get; set; } = default!;
+        public WeeklyStatisticsDto Weekly { get; set; } = default!;
+        public MonthlyStatisticsDto Monthly { get; set; } = default!;
     }
 }

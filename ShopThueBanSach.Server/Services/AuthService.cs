@@ -41,7 +41,8 @@ namespace ShopThueBanSach.Server.Services
                 Email = dto.Email,
                 Address = dto.Address,
                 DateOfBirth = (DateTime)dto.DateOfBirth!,
-                EmailConfirmed = false
+                EmailConfirmed = false,
+                Role = "Khách hàng" // GÁN ROLE MẶC ĐỊNH
             };
 
             var result = await _userManager.CreateAsync(user, dto.Password);
@@ -55,14 +56,24 @@ namespace ShopThueBanSach.Server.Services
             var code = GenerateRandomCode(6); // 6 số
             _cache.Set($"email_confirm_{user.Email}", code, TimeSpan.FromMinutes(10));
 
-            await _emailSender.SendEmailAsync(user.Email, "Mã xác nhận Email",
-                $"<p>Mã xác nhận của bạn là: <b>{code}</b>. Mã này sẽ hết hạn sau 10 phút.</p>");
+            await _emailSender.SendEmailAsync(user.Email, "Xác nhận địa chỉ email của bạn",
+     $@"
+<div style='font-family: Arial, sans-serif; font-size: 16px; color: #333;'>
+    <h2 style='color: #2a8dd2;'>Xác nhận địa chỉ Email</h2>
+    <p>Xin chào <strong>{user.UserName ?? "bạn"}</strong>,</p>
+    <p>Bạn vừa yêu cầu xác nhận địa chỉ email của mình. Vui lòng sử dụng mã xác nhận dưới đây để hoàn tất quá trình:</p>
+    <p style='font-size: 18px; margin: 20px 0;'>
+        <strong style='background-color: #f0f0f0; padding: 10px 20px; border-radius: 5px; display: inline-block; letter-spacing: 2px;'>{code}</strong>
+    </p>
+    <p><i>Lưu ý: Mã xác nhận này sẽ hết hạn sau 10 phút.</i></p>
+    <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
+    <hr />
+    <p style='font-size: 14px; color: #999;'>Trân trọng,<br/>Đội ngũ hỗ trợ khách hàng</p>
+</div>");
+
 
             return new AuthResult { IsSuccess = true, Message = "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản." };
         }
-
-
-
 
 
 
@@ -168,11 +179,12 @@ namespace ShopThueBanSach.Server.Services
         private string GenerateJwtToken(User user)
         {
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Name, user.UserName!),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Name, user.UserName!),
+        new Claim(ClaimTypes.Role, user.Role ?? "Khách hàng"), // GÁN ROLE
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -187,6 +199,7 @@ namespace ShopThueBanSach.Server.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
 
         private string GenerateRefreshToken()
         {
@@ -280,8 +293,21 @@ namespace ShopThueBanSach.Server.Services
             var code = GenerateRandomCode(6);
             _cache.Set($"email_confirm_{email}", code, TimeSpan.FromMinutes(10));
 
-            await _emailSender.SendEmailAsync(email, "Mã xác nhận Email",
-                $"<p>Mã xác nhận của bạn là: <b>{code}</b>. Mã này sẽ hết hạn sau 10 phút.</p>");
+            await _emailSender.SendEmailAsync(user.Email, "Xác nhận địa chỉ email của bạn",
+ $@"
+<div style='font-family: Arial, sans-serif; font-size: 16px; color: #333;'>
+    <h2 style='color: #2a8dd2;'>Xác nhận địa chỉ Email</h2>
+    <p>Xin chào <strong>{user.UserName ?? "bạn"}</strong>,</p>
+    <p>Bạn vừa yêu cầu xác nhận địa chỉ email của mình. Vui lòng sử dụng mã xác nhận dưới đây để hoàn tất quá trình:</p>
+    <p style='font-size: 18px; margin: 20px 0;'>
+        <strong style='background-color: #f0f0f0; padding: 10px 20px; border-radius: 5px; display: inline-block; letter-spacing: 2px;'>{code}</strong>
+    </p>
+    <p><i>Lưu ý: Mã xác nhận này sẽ hết hạn sau 10 phút.</i></p>
+    <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
+    <hr />
+    <p style='font-size: 14px; color: #999;'>Trân trọng,<br/>Đội ngũ hỗ trợ khách hàng</p>
+</div>");
+
 
             return new AuthResult { IsSuccess = true, Message = "Mã xác nhận đã được gửi lại vào email." };
         }
@@ -310,6 +336,7 @@ namespace ShopThueBanSach.Server.Services
             _cache.Remove($"email_confirm_{email}"); // xoá sau khi dùng
             return new AuthResult { IsSuccess = true, Message = "Xác nhận email thành công." };
         }
+
 
     }
 }
