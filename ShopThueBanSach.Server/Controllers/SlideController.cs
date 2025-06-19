@@ -14,10 +14,11 @@ namespace ShopThueBanSach.Server.Controllers
         private readonly IActivityNotificationService _notificationService;
         private readonly IStaffService _staffService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+
         public SlideController(
             ISlideService service,
             IActivityNotificationService notificationService,
-                 IHttpContextAccessor httpContextAccessor,
+            IHttpContextAccessor httpContextAccessor,
             IStaffService staffService)
         {
             _service = service;
@@ -26,19 +27,21 @@ namespace ShopThueBanSach.Server.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        private int? GetCurrentStaffId()
+        // ✅ Lấy StaffId theo kiểu string
+        private async Task<string?> GetCurrentStaffIdAsync()
         {
-            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
-            return _staffService.GetStaffIdByEmail(claim); // bạn cần cài hàm này
+            var email = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
+            return string.IsNullOrEmpty(email)
+                ? null
+                : await _staffService.GetStaffIdByEmailAsync(email);
         }
-
 
         private async Task CreateNotificationIfValidAsync(string description)
         {
-            var staffId = GetCurrentStaffId();
-            if (staffId.HasValue && await _staffService.ExistsAsync(staffId.Value))
+            var staffId = await GetCurrentStaffIdAsync();
+            if (!string.IsNullOrEmpty(staffId) && await _staffService.ExistsAsync(staffId))
             {
-                await _notificationService.CreateNotificationAsync(staffId.Value, description);
+                await _notificationService.CreateNotificationAsync(staffId, description);
             }
         }
 
@@ -83,6 +86,5 @@ namespace ShopThueBanSach.Server.Controllers
 
             return success ? NoContent() : NotFound();
         }
-
     }
 }

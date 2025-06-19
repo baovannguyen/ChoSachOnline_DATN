@@ -28,6 +28,32 @@ namespace ShopThueBanSach.Server.Controllers
             _dbContext = dbContext;
         }
 
+        /* ------------------ Helper lấy StaffId ------------------ */
+        private async Task<string?> GetCurrentStaffIdAsync()
+        {
+            // Giả định ClaimTypes.Name chứa email
+            var userEmail = _httpContextAccessor.HttpContext?.User?
+                                         .FindFirst(ClaimTypes.Name)?.Value;
+
+            if (string.IsNullOrEmpty(userEmail)) return null;
+
+            return await _dbContext.Staffs
+                                   .Where(s => s.Email == userEmail && s.Role == "Staff")
+                                   .Select(s => s.StaffId)
+                                   .FirstOrDefaultAsync();
+        }
+
+        private async Task NotifyAsync(string description)
+        {
+            var staffId = await GetCurrentStaffIdAsync();
+            if (!string.IsNullOrEmpty(staffId))
+            {
+                await _notificationService.CreateNotificationAsync(staffId, description);
+            }
+        }
+        /* -------------------------------------------------------- */
+
+        /* ----------------------- CRUD --------------------------- */
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -39,21 +65,14 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> GetById(string id)
         {
             var result = await _service.GetByIdAsync(id);
-            if (result == null) return NotFound();
-            return Ok(result);
+            return result == null ? NotFound() : Ok(result);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(CategoryDto dto)
         {
             var result = await _service.CreateAsync(dto);
-
-            var staffId = await GetCurrentStaffIdAsync();
-            if (staffId != null)
-            {
-                var description = $"🟢 Staff đã thêm 1 thể loại mới: {dto.CategoryName}";
-                await _notificationService.CreateNotificationAsync(staffId.Value, description);
-            }
+            await NotifyAsync($"🟢 Thêm thể loại mới: {dto.CategoryName}");
 
             return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
         }
@@ -64,13 +83,7 @@ namespace ShopThueBanSach.Server.Controllers
             var result = await _service.UpdateAsync(id, dto);
             if (result == null) return NotFound();
 
-            var staffId = await GetCurrentStaffIdAsync();
-            if (staffId != null)
-            {
-                var description = $"🟡 Staff đã cập nhật thể loại: {dto.CategoryName} (ID: {id})";
-                await _notificationService.CreateNotificationAsync(staffId.Value, description);
-            }
-
+            await NotifyAsync($"🟡 Cập nhật thể loại: {dto.CategoryName} (ID: {id})");
             return Ok(result);
         }
 
@@ -80,37 +93,9 @@ namespace ShopThueBanSach.Server.Controllers
             var success = await _service.DeleteAsync(id);
             if (!success) return NotFound();
 
-            var staffId = await GetCurrentStaffIdAsync();
-            if (staffId != null)
-            {
-                var description = $"🔴 Staff đã sửa thể loại : {id}";
-                await _notificationService.CreateNotificationAsync(staffId.Value, description);
-            }
-
+            await NotifyAsync($"🔴 Xóa thể loại: {id}");
             return NoContent();
         }
-
-        private async Task<int?> GetCurrentStaffIdAsync()
-        {
-            // ✅ Sử dụng ClaimTypes.Name thay vì Email
-            var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
-
-            Console.WriteLine($"🔍 Email from token: {userEmail}");
-
-            if (!string.IsNullOrEmpty(userEmail))
-            {
-                // 🔍 Đảm bảo email trong bảng Staff là duy nhất
-                var staff = await _dbContext.Staffs.FirstOrDefaultAsync(s => s.Email == userEmail);
-                if (staff != null)
-                {
-                    Console.WriteLine($"✅ Found StaffId: {staff.StaffId} for email {userEmail}");
-                    return staff.StaffId;
-                }
-            }
-
-            Console.WriteLine("⚠ Không tìm thấy Staff tương ứng với email hiện tại.");
-            return null;
-        }
-
+        /* -------------------------------------------------------- */
     }
 }

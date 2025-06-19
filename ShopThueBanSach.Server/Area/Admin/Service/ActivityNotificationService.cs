@@ -11,7 +11,7 @@ public class ActivityNotificationService : IActivityNotificationService
         _context = context;
     }
 
-    public async Task CreateNotificationAsync(int staffId, string description)
+    public async Task CreateNotificationAsync(string staffId, string description)
     {
         var notification = new ActivityNotification
         {
