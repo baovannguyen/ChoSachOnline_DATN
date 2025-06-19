@@ -10,10 +10,12 @@ namespace ShopThueBanSach.Server.Services
     public class SaleBookService : ISaleBookService
     {
         private readonly AppDBContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public SaleBookService(AppDBContext context)
+        public SaleBookService(AppDBContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         // SaleBookService.cs (chỉnh sửa lại phương thức GetAllAsync)
@@ -70,7 +72,7 @@ namespace ShopThueBanSach.Server.Services
                 PageCount = sb.Pages,
                 Price = sb.Price,
                 FinalPrice = sb.Promotion != null
-                    ? sb.Price * (1 - (decimal)(sb.Promotion.DiscountPercentage / 100.0)) // ✅ THÊM GIÁ SAU KM
+                    ? sb.Price * (1 - (decimal)(sb.Promotion.DiscountPercentage / 100)) // ✅ THÊM GIÁ SAU KM
                     : sb.Price,
                 PromotionName = sb.Promotion?.PromotionName, // ✅ THÊM TÊN KHUYẾN MÃI
                 Quantity = sb.Quantity,
@@ -95,13 +97,30 @@ namespace ShopThueBanSach.Server.Services
                 Pages = dto.Pages,
                 Price = dto.Price,
                 Quantity = dto.Quantity,
-                ImageUrl = dto.ImageUrl,
                 IsHidden = dto.IsHidden,
                 AuthorSaleBooks = dto.AuthorIds.Select(aid => new AuthorSaleBook { AuthorId = aid }).ToList(),
                 CategorySaleBooks = dto.CategoryIds.Select(cid => new CategorySaleBook { CategoryId = cid }).ToList()
             };
 
-            // ✅ Nếu có PromotionId → kiểm tra hợp lệ
+            // ✅ Lưu ảnh nếu có
+            if (dto.ImageUrl != null && dto.ImageUrl.Length > 0)
+            {
+                var uploadsFolder = Path.Combine("wwwroot", "Images", "SaleBooks");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = $"{Guid.NewGuid()}_{dto.ImageUrl.FileName}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await dto.ImageUrl.CopyToAsync(stream);
+                }
+
+                saleBook.ImageUrl = $"/Images/SaleBooks/{uniqueFileName}";
+            }
+
+            // ✅ Áp dụng khuyến mãi nếu có
             if (!string.IsNullOrWhiteSpace(dto.PromotionId))
             {
                 var promotion = await _context.Promotions.FindAsync(dto.PromotionId);
@@ -109,17 +128,14 @@ namespace ShopThueBanSach.Server.Services
                 {
                     saleBook.PromotionId = promotion.PromotionId;
                     saleBook.FinalPrice = saleBook.Price * (1 - ((decimal)promotion.DiscountPercentage / 100));
-
                 }
                 else
                 {
-                    saleBook.PromotionId = null; // ❗Không hợp lệ thì không gán
                     saleBook.FinalPrice = saleBook.Price;
                 }
             }
             else
             {
-                saleBook.PromotionId = null; // ❗Không nhập mã thì null
                 saleBook.FinalPrice = saleBook.Price;
             }
 
@@ -128,7 +144,8 @@ namespace ShopThueBanSach.Server.Services
             return saleBook.SaleBookId;
         }
 
-        public async Task<bool> UpdateAsync(string id, SaleBookDto dto)
+
+        public async Task<bool> UpdateAsync(string id, UpdateSaleBookDto dto)
         {
             var saleBook = await _context.SaleBooks
                 .Include(sb => sb.AuthorSaleBooks)
@@ -137,39 +154,77 @@ namespace ShopThueBanSach.Server.Services
 
             if (saleBook == null) return false;
 
-            // ✅ Cập nhật thông tin cơ bản
+            // Cập nhật thông tin cơ bản
             saleBook.Title = dto.Title;
             saleBook.Description = dto.Description;
             saleBook.Publisher = dto.Publisher;
             saleBook.Translator = dto.Translator;
-            saleBook.Size = dto.PackagingSize;
-            saleBook.Pages = dto.PageCount;
+            saleBook.Size = dto.Size;
+            saleBook.Pages = dto.Pages;
             saleBook.Price = dto.Price;
             saleBook.Quantity = dto.Quantity;
-            saleBook.ImageUrl = dto.ImageUrl;
             saleBook.IsHidden = dto.IsHidden;
 
-            // Nếu chuỗi rỗng hoặc null thì gỡ khuyến mãi
-            saleBook.PromotionId = string.IsNullOrWhiteSpace(dto.PromotionId) ? null : dto.PromotionId;
+            // ✅ Xử lý ảnh nếu có upload mới
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "Images", "SaleBooks");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
 
+                // Xóa ảnh cũ nếu tồn tại
+                if (!string.IsNullOrEmpty(saleBook.ImageUrl))
+                {
+                    var oldPath = Path.Combine(_env.WebRootPath, saleBook.ImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    if (File.Exists(oldPath))
+                    {
+                        File.Delete(oldPath);
+                    }
+                }
 
-            // ✅ Cập nhật AuthorSaleBooks
+                // Lưu ảnh mới
+                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(dto.ImageFile.FileName)}";
+                var newPath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var stream = new FileStream(newPath, FileMode.Create))
+                {
+                    await dto.ImageFile.CopyToAsync(stream);
+                }
+
+                // Cập nhật đường dẫn mới vào DB
+                saleBook.ImageUrl = $"/Images/SaleBooks/{uniqueFileName}";
+            }
+
+            // ✅ Cập nhật khuyến mãi
+            if (!string.IsNullOrWhiteSpace(dto.PromotionId))
+            {
+                var promotion = await _context.Promotions.FindAsync(dto.PromotionId);
+                if (promotion != null && promotion.StartDate <= DateTime.UtcNow && promotion.EndDate >= DateTime.UtcNow)
+                {
+                    saleBook.PromotionId = dto.PromotionId;
+                    saleBook.FinalPrice = saleBook.Price * (1 - ((decimal)promotion.DiscountPercentage / 100));
+                }
+                else
+                {
+                    saleBook.PromotionId = null;
+                    saleBook.FinalPrice = saleBook.Price;
+                }
+            }
+            else
+            {
+                saleBook.PromotionId = null;
+                saleBook.FinalPrice = saleBook.Price;
+            }
+
+            // ✅ Update Author & Category
             saleBook.AuthorSaleBooks.Clear();
             saleBook.AuthorSaleBooks = dto.AuthorIds
-                .Select(authorId => new AuthorSaleBook
-                {
-                    SaleBookId = id,
-                    AuthorId = authorId
-                }).ToList();
+                .Select(authorId => new AuthorSaleBook { AuthorId = authorId, SaleBookId = id })
+                .ToList();
 
-            // ✅ Cập nhật CategorySaleBooks
             saleBook.CategorySaleBooks.Clear();
             saleBook.CategorySaleBooks = dto.CategoryIds
-                .Select(categoryId => new CategorySaleBook
-                {
-                    SaleBookId = id,
-                    CategoryId = categoryId
-                }).ToList();
+                .Select(catId => new CategorySaleBook { CategoryId = catId, SaleBookId = id })
+                .ToList();
 
             await _context.SaveChangesAsync();
             return true;

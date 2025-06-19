@@ -8,6 +8,6 @@
         public string? Address { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public double Points { get; set; }
-        public string? ImageUser { get; set; }
+        public string? ImageUser { get; set; } 
     }
 }

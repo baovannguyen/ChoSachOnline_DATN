@@ -14,10 +14,12 @@ namespace ShopThueBanSach.Server.Services
     public class RentBookService : IRentBookService
     {
         private readonly AppDBContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public RentBookService(AppDBContext context)
+        public RentBookService(AppDBContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         public async Task<List<RentBookDto>> GetAllAsync()
@@ -38,7 +40,7 @@ namespace ShopThueBanSach.Server.Services
                     ImageUrl = r.ImageUrl,
                     Quantity = r.Quantity,
                     PromotionId = null,
-                    IsHidden = r.IsHidden,  // <-- thêm
+                    IsHidden = r.IsHidden,
                     AuthorIds = r.AuthorRentBooks.Select(ar => ar.AuthorId).ToList(),
                     CategoryIds = r.CategoryRentBooks.Select(cr => cr.CategoryId).ToList()
                 }).ToListAsync();
@@ -46,54 +48,68 @@ namespace ShopThueBanSach.Server.Services
 
         public async Task<RentBookDto?> GetByIdAsync(string id)
         {
-            var rentBook = await _context.RentBooks
-                .Include(r => r.AuthorRentBooks)
-                .Include(r => r.CategoryRentBooks)
-                .FirstOrDefaultAsync(r => r.RentBookId == id);
+            var r = await _context.RentBooks
+                .Include(x => x.AuthorRentBooks)
+                .Include(x => x.CategoryRentBooks)
+                .FirstOrDefaultAsync(x => x.RentBookId == id);
 
-            if (rentBook == null) return null;
+            if (r == null) return null;
 
             return new RentBookDto
             {
-                RentBookId = rentBook.RentBookId,
-                Title = rentBook.Title,
-                Description = rentBook.Description,
-                Publisher = rentBook.Publisher,
-                PageCount = rentBook.Pages,
-                Translator = rentBook.Translator,
-                PackagingSize = rentBook.Size,
-                Price = rentBook.Price,
-                ImageUrl = rentBook.ImageUrl,
-                Quantity = rentBook.Quantity,
+                RentBookId = r.RentBookId,
+                Title = r.Title,
+                Description = r.Description,
+                Publisher = r.Publisher,
+                PageCount = r.Pages,
+                Translator = r.Translator,
+                PackagingSize = r.Size,
+                Price = r.Price,
+                ImageUrl = r.ImageUrl,
+                Quantity = r.Quantity,
                 PromotionId = null,
-                IsHidden = rentBook.IsHidden,  // <-- thêm
-                AuthorIds = rentBook.AuthorRentBooks.Select(ar => ar.AuthorId).ToList(),
-                CategoryIds = rentBook.CategoryRentBooks.Select(cr => cr.CategoryId).ToList()
+                IsHidden = r.IsHidden,
+                AuthorIds = r.AuthorRentBooks.Select(ar => ar.AuthorId).ToList(),
+                CategoryIds = r.CategoryRentBooks.Select(cr => cr.CategoryId).ToList()
             };
         }
 
-        public async Task<string> CreateAsync(RentBookDto dto)
+        public async Task<string> CreateAsync(CreateRentBookDto dto, IFormFile? imageFile)
         {
+            string? imageUrl = null;
+
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "Images", "RentBooks");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(imageFile.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imageFile.CopyToAsync(stream);
+                }
+
+                imageUrl = $"/Images/RentBooks/{uniqueFileName}";
+            }
+
             var rentBook = new RentBook
             {
+                RentBookId = Guid.NewGuid().ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
                 Publisher = dto.Publisher,
                 Translator = dto.Translator,
-                Size = dto.PackagingSize,
-                Pages = dto.PageCount,
+                Size = dto.Size,
+                Pages = dto.Pages,
                 Price = dto.Price,
-                ImageUrl = dto.ImageUrl,
                 Quantity = dto.Quantity,
-                IsHidden = dto.IsHidden,  // <-- cập nhật giá trị từ dto
-                AuthorRentBooks = dto.AuthorIds.Select(id => new AuthorRentBook
-                {
-                    AuthorId = id
-                }).ToList(),
-                CategoryRentBooks = dto.CategoryIds.Select(id => new CategoryRentBook
-                {
-                    CategoryId = id
-                }).ToList()
+                ImageUrl = imageUrl,
+                IsHidden = dto.IsHidden,
+                AuthorRentBooks = dto.AuthorIds.Select(id => new AuthorRentBook { AuthorId = id }).ToList(),
+                CategoryRentBooks = dto.CategoryIds.Select(id => new CategoryRentBook { CategoryId = id }).ToList()
             };
 
             _context.RentBooks.Add(rentBook);
@@ -101,7 +117,8 @@ namespace ShopThueBanSach.Server.Services
             return rentBook.RentBookId;
         }
 
-        public async Task<bool> UpdateAsync(string id, RentBookDto dto)
+
+        public async Task<bool> UpdateAsync(string id, UpdateRentBookDto dto)
         {
             var rentBook = await _context.RentBooks
                 .Include(r => r.AuthorRentBooks)
@@ -114,33 +131,63 @@ namespace ShopThueBanSach.Server.Services
             rentBook.Description = dto.Description;
             rentBook.Publisher = dto.Publisher;
             rentBook.Translator = dto.Translator;
-            rentBook.Size = dto.PackagingSize;
-            rentBook.Pages = dto.PageCount;
+            rentBook.Size = dto.Size;
+            rentBook.Pages = dto.Pages;
             rentBook.Price = dto.Price;
-            rentBook.ImageUrl = dto.ImageUrl;
             rentBook.Quantity = dto.Quantity;
-            rentBook.IsHidden = dto.IsHidden;  // <-- cập nhật giá trị
+            rentBook.IsHidden = dto.IsHidden;
 
+            // ✅ Xử lý ảnh nếu có ảnh mới
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "Images", "RentBooks");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                // Xóa ảnh cũ nếu có
+                if (!string.IsNullOrEmpty(rentBook.ImageUrl))
+                {
+                    var oldPath = Path.Combine(_env.WebRootPath, rentBook.ImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    if (File.Exists(oldPath))
+                        File.Delete(oldPath);
+                }
+
+                // Lưu ảnh mới
+                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(dto.ImageFile.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await dto.ImageFile.CopyToAsync(stream);
+                }
+
+                rentBook.ImageUrl = $"/Images/RentBooks/{uniqueFileName}";
+            }
+
+            // ✅ Cập nhật Author & Category
             rentBook.AuthorRentBooks.Clear();
-            rentBook.CategoryRentBooks.Clear();
+            rentBook.AuthorRentBooks = dto.AuthorIds.Select(id => new AuthorRentBook { AuthorId = id }).ToList();
 
-            rentBook.AuthorRentBooks = dto.AuthorIds.Select(id => new AuthorRentBook
-            {
-                AuthorId = id
-            }).ToList();
-            rentBook.CategoryRentBooks = dto.CategoryIds.Select(id => new CategoryRentBook
-            {
-                CategoryId = id
-            }).ToList();
+            rentBook.CategoryRentBooks.Clear();
+            rentBook.CategoryRentBooks = dto.CategoryIds.Select(id => new CategoryRentBook { CategoryId = id }).ToList();
 
             await _context.SaveChangesAsync();
             return true;
         }
 
+
         public async Task<bool> DeleteAsync(string id)
         {
             var rentBook = await _context.RentBooks.FindAsync(id);
             if (rentBook == null) return false;
+
+            // Xóa ảnh nếu có
+            if (!string.IsNullOrEmpty(rentBook.ImageUrl))
+            {
+                var oldFilePath = Path.Combine(_env.WebRootPath, rentBook.ImageUrl.TrimStart('/'));
+                if (File.Exists(oldFilePath))
+                    File.Delete(oldFilePath);
+            }
+
             _context.RentBooks.Remove(rentBook);
             await _context.SaveChangesAsync();
             return true;
@@ -155,42 +202,11 @@ namespace ShopThueBanSach.Server.Services
             return true;
         }
 
-        public async Task<string> CreateAsync(CreateRentBookDto dto)
-        {
-            var rentBook = new RentBook
-            {
-                RentBookId = Guid.NewGuid().ToString(),
-                Title = dto.Title,
-                Description = dto.Description,
-                Publisher = dto.Publisher,
-                Translator = dto.Translator,
-                Size = dto.Size,
-                Pages = dto.Pages,
-                Price = dto.Price,
-                Quantity = dto.Quantity,
-                ImageUrl = dto.ImageUrl,
-                IsHidden = dto.IsHidden,
-                AuthorRentBooks = dto.AuthorIds.Select(id => new AuthorRentBook
-                {
-                    AuthorId = id
-                }).ToList(),
-                CategoryRentBooks = dto.CategoryIds.Select(id => new CategoryRentBook
-                {
-                    CategoryId = id
-                }).ToList()
-            };
-
-            _context.RentBooks.Add(rentBook);
-            await _context.SaveChangesAsync();
-            return rentBook.RentBookId;
-        }
         public async Task<bool> CheckTitleExistsAsync(string title, string? excludeId = null)
         {
             var query = _context.RentBooks.Where(rb => rb.Title.ToLower() == title.Trim().ToLower());
-
             if (!string.IsNullOrEmpty(excludeId))
                 query = query.Where(rb => rb.RentBookId != excludeId);
-
             return await query.AnyAsync();
         }
     }

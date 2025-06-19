@@ -48,43 +48,40 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateRentBookDto dto)
+        public async Task<IActionResult> Create([FromForm] CreateRentBookDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Kiểm tra dữ liệu không hợp lệ như "string"
             if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
                 return BadRequest(new { message = "Tiêu đề và nhà xuất bản không hợp lệ." });
 
-            // Kiểm tra trùng tiêu đề
             if (await _service.CheckTitleExistsAsync(dto.Title))
                 return BadRequest(new { message = "Tiêu đề sách thuê đã tồn tại." });
 
-            var id = await _service.CreateAsync(dto);
+            var id = await _service.CreateAsync(dto, dto.ImageFile); // ✅ pass ảnh
             await CreateNotificationIfStaffExistsAsync($"Thêm sách thuê: {dto.Title}");
             return CreatedAtAction(nameof(GetById), new { id }, dto);
         }
 
 
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] RentBookDto dto)
+        public async Task<IActionResult> Update(string id, [FromForm] UpdateRentBookDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
-                return BadRequest(new { message = "Tiêu đề và nhà xuất bản không hợp lệ." });
-
-            // Kiểm tra trùng tiêu đề (trừ chính nó)
             if (await _service.CheckTitleExistsAsync(dto.Title, id))
                 return BadRequest(new { message = "Tiêu đề sách thuê đã tồn tại." });
 
             var result = await _service.UpdateAsync(id, dto);
-            if (result)
-                await CreateNotificationIfStaffExistsAsync($"Cập nhật sách thuê: {dto.Title}");
-            return result ? NoContent() : NotFound();
+            if (!result) return NotFound();
+
+            await CreateNotificationIfStaffExistsAsync($"Cập nhật sách thuê: {dto.Title}");
+            return Ok(new { message = "Cập nhật sách thành công." });
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)

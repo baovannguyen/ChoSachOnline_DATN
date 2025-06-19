@@ -33,7 +33,9 @@ namespace ShopThueBanSach.Server.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateSaleBookDto dto)
+        [HttpPost]
+        public async Task<IActionResult> Create([FromForm] CreateSaleBookDto dto)
+
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -52,7 +54,8 @@ namespace ShopThueBanSach.Server.Controllers
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] SaleBookDto dto)
+        public async Task<IActionResult> Update(string id, [FromForm] UpdateSaleBookDto dto)
+
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
