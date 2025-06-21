@@ -1,8 +1,8 @@
 ﻿using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
-using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using ShopThueBanSach.Server.Models.BooksModel.DiscountCode;
 
 namespace ShopThueBanSach.Server.Services
 {
@@ -14,7 +14,7 @@ namespace ShopThueBanSach.Server.Services
         {
             _context = context;
         }
-        public async Task<bool> CreateAsync(DiscountCodeDTO model)
+        public async Task<bool> CreateAsync(CreateDiscountCodeDto model)
         {
             var entity = new DiscountCode
             {
@@ -76,18 +76,31 @@ namespace ShopThueBanSach.Server.Services
             };
         }
 
-        public async Task<bool> UpdateAsync(string id, DiscountCodeDTO model)
+        public async Task<bool> UpdateAsync(string id, UpdateDiscountCodeDto model)
         {
             var entity = await _context.DiscountCodes.FindAsync(id);
             if (entity == null) return false;
 
-            entity.DiscountCodeName = model.DiscountCodeName;
-            entity.Description = model.Description;
-            entity.StartDate = model.StartDate;
-            entity.EndDate = model.EndDate;
-            entity.AvailableQuantity = model.AvailableQuantity;
-            entity.RequiredPoints = model.RequiredPoints;
-            entity.DiscountValue = model.DiscountValue;
+            if (model.DiscountCodeName != null)
+                entity.DiscountCodeName = model.DiscountCodeName;
+
+            if (model.Description != null)
+                entity.Description = model.Description;
+
+            if (model.StartDate.HasValue)
+                entity.StartDate = model.StartDate.Value;
+
+            if (model.EndDate.HasValue)
+                entity.EndDate = model.EndDate.Value;
+
+            if (model.AvailableQuantity.HasValue)
+                entity.AvailableQuantity = model.AvailableQuantity.Value;
+
+            if (model.RequiredPoints.HasValue)
+                entity.RequiredPoints = model.RequiredPoints.Value;
+
+            if (model.DiscountValue.HasValue)
+                entity.DiscountValue = model.DiscountValue.Value;
 
             await _context.SaveChangesAsync();
             return true;

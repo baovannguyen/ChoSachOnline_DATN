@@ -1,4 +1,4 @@
-﻿namespace ShopThueBanSach.Server.Models.BooksModel
+﻿namespace ShopThueBanSach.Server.Models.BooksModel.DiscountCode
 {
     public class DiscountCodeDTO
     {

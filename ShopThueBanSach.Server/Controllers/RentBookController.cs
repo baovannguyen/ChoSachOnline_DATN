@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
-using ShopThueBanSach.Server.Models.BooksModel;
+using ShopThueBanSach.Server.Models.BooksModel.RentBooks;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Security.Claims;
 
@@ -61,36 +61,56 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateRentBookDto dto)
+        public async Task<IActionResult> Create([FromForm] CreateRentBookDto dto)
         {
-            var id = await _service.CreateAsync(dto);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
+                return BadRequest(new { message = "Tiêu đề và nhà xuất bản không hợp lệ." });
+
+            if (await _service.CheckTitleExistsAsync(dto.Title))
+                return BadRequest(new { message = "Tiêu đề sách thuê đã tồn tại." });
+
+            var id = await _service.CreateAsync(dto, dto.ImageFile); // ✅ pass ảnh
             await CreateNotificationIfStaffExistsAsync($"Thêm sách thuê: {dto.Title}");
             return CreatedAtAction(nameof(GetById), new { id }, dto);
         }
 
+
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] RentBookDto dto)
+        public async Task<IActionResult> Update(string id, [FromForm] UpdateRentBookDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (await _service.CheckTitleExistsAsync(dto.Title, id))
+                return BadRequest(new { message = "Tiêu đề sách thuê đã tồn tại." });
+
             var result = await _service.UpdateAsync(id, dto);
-            if (result)
-                await CreateNotificationIfStaffExistsAsync($"Cập nhật sách thuê: {dto.Title} (ID: {id})");
-            return result ? NoContent() : NotFound();
+            if (!result) return NotFound();
+
+            await CreateNotificationIfStaffExistsAsync($"Cập nhật sách thuê: {dto.Title}");
+            return Ok(new { message = "Cập nhật sách thành công." });
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             var result = await _service.DeleteAsync(id);
             if (result)
-                await CreateNotificationIfStaffExistsAsync($"🔴 Xóa sách thuê: ID {id}");
+                await CreateNotificationIfStaffExistsAsync($"Xóa sách thuê: {id}");
             return result ? NoContent() : NotFound();
         }
+
         [HttpPut("set-visibility/{id}/{isHidden}")]
         public async Task<IActionResult> SetVisibility(string id, int isHidden)
         {
             var result = await _service.SetVisibilityAsync(id, isHidden == 1);
             if (result)
-                await CreateNotificationIfStaffExistsAsync($"🔁 Cập nhật hiển thị sách thuê: {id} -> {(isHidden == 1 ? "ẩn" : "hiện")}");
+                await CreateNotificationIfStaffExistsAsync($"Cập nhật hiển thị sách thuê: {id} -> {(isHidden == 1 ? "ẩn" : "hiện")}");
             return result ? NoContent() : NotFound();
         }
     }

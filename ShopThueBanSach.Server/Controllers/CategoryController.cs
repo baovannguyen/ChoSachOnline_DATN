@@ -65,25 +65,66 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> GetById(string id)
         {
             var result = await _service.GetByIdAsync(id);
-            return result == null ? NotFound() : Ok(result);
+            if (result == null) return NotFound();
+            return Ok(result);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(CategoryDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (dto.CategoryName?.Trim().ToLower() == "string" || dto.Description?.Trim().ToLower() == "string")
+            {
+                return BadRequest(new { message = "Tên thể loại và mô tả không được để là 'string'." });
+            }
+
+            // ❗ Kiểm tra trùng tên
+            bool isDuplicate = await _dbContext.Categories
+    .AnyAsync(c => c.Name.ToLower() == dto.CategoryName.Trim().ToLower());
+
+            if (isDuplicate)
+            {
+                return BadRequest(new { message = "Tên thể loại đã tồn tại. Vui lòng nhập tên khác." });
+            }
+
             var result = await _service.CreateAsync(dto);
-            await NotifyAsync($"🟢 Thêm thể loại mới: {dto.CategoryName}");
+
+           
 
             return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
         }
+
+        // ... các phương thức khác giữ nguyên
+
+        /*[HttpPost]
+        public async Task<IActionResult> Create(CategoryDto dto)
+        {
+            var result = await _service.CreateAsync(dto);
+
+            // 🔔 Tạo thông báo – gán userId tạm thời để kiểm tra
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // Nếu không có userId thì gán thủ công để test
+            if (string.IsNullOrEmpty(userId))
+            {
+                userId = "test-user-id"; // 👈 Gán tạm userId (bạn có thể dùng ID thực từ bảng User)
+            }
+
+            var description = $"User added new category: {dto.CategoryName}";
+            await _notificationService.CreateNotificationAsync(userId, description);
+            Console.WriteLine($"[Thông báo] Đã tạo thông báo: {description} (userId = {userId})");
+
+            return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
+        }
+*/
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, CategoryDto dto)
         {
             var result = await _service.UpdateAsync(id, dto);
             if (result == null) return NotFound();
-
-            await NotifyAsync($"🟡 Cập nhật thể loại: {dto.CategoryName} (ID: {id})");
             return Ok(result);
         }
 
@@ -92,10 +133,7 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var success = await _service.DeleteAsync(id);
             if (!success) return NotFound();
-
-            await NotifyAsync($"🔴 Xóa thể loại: {id}");
             return NoContent();
         }
-        /* -------------------------------------------------------- */
     }
 }

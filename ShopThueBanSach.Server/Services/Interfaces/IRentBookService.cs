@@ -1,5 +1,5 @@
 ﻿using ShopThueBanSach.Server.Entities;
-using ShopThueBanSach.Server.Models.BooksModel;
+using ShopThueBanSach.Server.Models.BooksModel.RentBooks;
 
 namespace ShopThueBanSach.Server.Services.Interfaces
 {
@@ -7,13 +7,11 @@ namespace ShopThueBanSach.Server.Services.Interfaces
     {
         Task<List<RentBookDto>> GetAllAsync();
         Task<RentBookDto?> GetByIdAsync(string id);
-
-        // Chỉ giữ 1 method CreateAsync với CreateRentBookDto
-        Task<string> CreateAsync(CreateRentBookDto dto);
-
-        Task<bool> UpdateAsync(string id, RentBookDto dto);
+        Task<string> CreateAsync(CreateRentBookDto dto, IFormFile? imageFile); // ✅ chuẩn hóa
+        Task<bool> UpdateAsync(string id, UpdateRentBookDto dto);
         Task<bool> DeleteAsync(string id);
         Task<bool> SetVisibilityAsync(string id, bool isHidden);
+        Task<bool> CheckTitleExistsAsync(string title, string? excludeId = null);
     }
 
 }

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ShopThueBanSach.Server.Models.BooksModel
+namespace ShopThueBanSach.Server.Models.BooksModel.SaleBooks
 {
     public class SaleBookDto
     {

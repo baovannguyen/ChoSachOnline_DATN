@@ -21,7 +21,7 @@ public class CreateRentBookDto
     [Required]
     public int Quantity { get; set; }
 
-    public string? ImageUrl { get; set; }
+    public IFormFile? ImageFile { get; set; } // ✅ Rename from ImageUrl
 
     public bool IsHidden { get; set; }  // ➕ thêm vào đây
 

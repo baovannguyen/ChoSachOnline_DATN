@@ -1,8 +1,11 @@
-﻿namespace ShopThueBanSach.Server.Models.SlideModel
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ShopThueBanSach.Server.Models.SlideModel
 {
     public class SlideDto
     {
-        public string ImageUrl { get; set; } = string.Empty;
+        [Required]
+        public IFormFile ImageFile { get; set; } = null!;
         public string? LinkUrl { get; set; }
     }
 }

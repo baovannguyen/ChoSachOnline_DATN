@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ShopThueBanSach.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class Da : Migration
+    public partial class gopmoinha : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
