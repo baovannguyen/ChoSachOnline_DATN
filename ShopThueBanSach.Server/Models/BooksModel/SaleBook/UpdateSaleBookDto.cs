@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
-namespace ShopThueBanSach.Server.Models.BooksModel
+namespace ShopThueBanSach.Server.Models.BooksModel.SaleBook
 {
     public class UpdateSaleBookDto
     {

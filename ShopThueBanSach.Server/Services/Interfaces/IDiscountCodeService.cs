@@ -1,4 +1,4 @@
-﻿using ShopThueBanSach.Server.Models.BooksModel;
+﻿using ShopThueBanSach.Server.Models.BooksModel.DiscountCode;
 
 namespace ShopThueBanSach.Server.Services.Interfaces
 {
@@ -6,8 +6,8 @@ namespace ShopThueBanSach.Server.Services.Interfaces
     {
         Task<List<DiscountCodeDTO>> GetAllAsync();
         Task<DiscountCodeDTO?> GetByIdAsync(string id);
-        Task<bool> CreateAsync(DiscountCodeDTO model);
-        Task<bool> UpdateAsync(string id, DiscountCodeDTO model);
+        Task<bool> CreateAsync(CreateDiscountCodeDto model);
+        Task<bool> UpdateAsync(string id, UpdateDiscountCodeDto model);
         Task<bool> DeleteAsync(string id);
         Task<List<DiscountCodeDTO>> GetAvailableForExchangeAsync();
     }

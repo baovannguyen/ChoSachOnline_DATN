@@ -2,12 +2,12 @@
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities.Relationships;
 using ShopThueBanSach.Server.Entities;
-using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using ShopThueBanSach.Server.Models.BooksModel.RentBook;
 
 namespace ShopThueBanSach.Server.Services
 {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ShopThueBanSach.Server.Models.BooksModel;
+using ShopThueBanSach.Server.Models.BooksModel.FavoriteBook;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Security.Claims;
 

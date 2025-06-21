@@ -1,4 +1,4 @@
-﻿namespace ShopThueBanSach.Server.Models.BooksModel
+﻿namespace ShopThueBanSach.Server.Models.BooksModel.FavoriteBook
 {
     public class FavoriteBookDto
     {
@@ -8,7 +8,7 @@
         public decimal Price { get; set; }
 
         public string? PromotionName { get; set; }
-        public Double? DiscountPercentage { get; set; }
+        public double? DiscountPercentage { get; set; }
         public string UserName { get; set; } // 👈 Thêm dòng này
     }
 }

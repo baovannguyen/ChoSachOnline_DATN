@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ShopThueBanSach.Server.Models.BooksModel
+namespace ShopThueBanSach.Server.Models.BooksModel.RentBook
 {
     public class UpdateRentBookDto
     {

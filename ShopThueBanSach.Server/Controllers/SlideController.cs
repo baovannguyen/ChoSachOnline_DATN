@@ -31,14 +31,14 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(SlideDto dto)
+        public async Task<IActionResult> Create([FromForm] SlideDto dto)
         {
             var result = await _service.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = result.SlideId }, result);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, SlideDto dto)
+        public async Task<IActionResult> Update(int id, [FromForm] SlideDto dto)
         {
             var result = await _service.UpdateAsync(id, dto);
             if (result == null) return NotFound();

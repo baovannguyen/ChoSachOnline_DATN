@@ -1,5 +1,5 @@
 ﻿using ShopThueBanSach.Server.Entities;
-using ShopThueBanSach.Server.Models.BooksModel;
+using ShopThueBanSach.Server.Models.BooksModel.RentBook;
 
 namespace ShopThueBanSach.Server.Services.Interfaces
 {

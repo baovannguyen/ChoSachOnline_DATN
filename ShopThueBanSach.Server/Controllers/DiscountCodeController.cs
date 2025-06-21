@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ShopThueBanSach.Server.Models.BooksModel;
+using ShopThueBanSach.Server.Models.BooksModel.DiscountCode;
 using ShopThueBanSach.Server.Services.Interfaces;
 
 namespace ShopThueBanSach.Server.Controllers
@@ -26,19 +26,17 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(DiscountCodeDTO model)
+        public async Task<IActionResult> Create(CreateDiscountCodeDto model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Chặn tên mặc định "string"
             if (model.DiscountCodeName?.Trim().ToLower() == "string" ||
                 model.Description?.Trim().ToLower() == "string")
             {
-                return BadRequest(new { message = "Tên mã và mô tả không được để là 'trống'." });
+                return BadRequest(new { message = "Tên mã và mô tả không hợp lệ." });
             }
 
-            // Kiểm tra ngày
             if (model.EndDate <= model.StartDate)
             {
                 return BadRequest(new { message = "Ngày kết thúc phải sau ngày bắt đầu." });
@@ -49,19 +47,15 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, DiscountCodeDTO model)
+
+       [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, UpdateDiscountCodeDto model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (model.DiscountCodeName?.Trim().ToLower() == "string" ||
-                model.Description?.Trim().ToLower() == "string")
-            {
-                return BadRequest(new { message = "Tên mã và mô tả không được để là 'trống'." });
-            }
-
-            if (model.EndDate <= model.StartDate)
+            if (model.StartDate.HasValue && model.EndDate.HasValue &&
+                model.EndDate.Value <= model.StartDate.Value)
             {
                 return BadRequest(new { message = "Ngày kết thúc phải sau ngày bắt đầu." });
             }
