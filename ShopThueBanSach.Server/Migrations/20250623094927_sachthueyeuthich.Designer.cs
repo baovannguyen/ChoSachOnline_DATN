@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopThueBanSach.Server.Data;
 
@@ -11,9 +12,11 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250623094927_sachthueyeuthich")]
+    partial class sachthueyeuthich
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -478,9 +481,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("PromotionId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("Publisher")
                         .HasColumnType("nvarchar(max)");
 
@@ -498,8 +498,6 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("RentBookId");
-
-                    b.HasIndex("PromotionId");
 
                     b.ToTable("RentBooks");
                 });
@@ -1008,15 +1006,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("SaleBook");
-                });
-
-            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBook", b =>
-                {
-                    b.HasOne("ShopThueBanSach.Server.Entities.Promotion", "Promotion")
-                        .WithMany()
-                        .HasForeignKey("PromotionId");
-
-                    b.Navigation("Promotion");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBookItem", b =>

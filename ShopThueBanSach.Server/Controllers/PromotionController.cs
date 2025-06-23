@@ -34,6 +34,9 @@ namespace ShopThueBanSach.Server.Controllers
             if (model.PromotionName?.Trim().ToLower() == "string")
                 return BadRequest(new { message = "Tên khuyến mãi không hợp lệ." });
 
+            if (model.DiscountPercentage <= 0 || model.DiscountPercentage > 100)
+                return BadRequest(new { message = "Phần trăm giảm giá phải lớn hơn 0 và nhỏ hơn hoặc bằng 100." });
+
             var isDuplicate = await _service.CheckNameExistsAsync(model.PromotionName);
             if (isDuplicate)
                 return BadRequest(new { message = "Tên khuyến mãi đã tồn tại." });
@@ -41,6 +44,7 @@ namespace ShopThueBanSach.Server.Controllers
             var result = await _service.CreatePromotionAsync(model);
             return result ? Ok() : BadRequest();
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] PromotionDTO model)
@@ -51,6 +55,9 @@ namespace ShopThueBanSach.Server.Controllers
             if (model.PromotionName?.Trim().ToLower() == "string")
                 return BadRequest(new { message = "Tên khuyến mãi không hợp lệ." });
 
+            if (model.DiscountPercentage <= 0 || model.DiscountPercentage > 100)
+                return BadRequest(new { message = "Phần trăm giảm giá phải lớn hơn 0 và nhỏ hơn hoặc bằng 100." });
+
             var isDuplicate = await _service.CheckNameExistsAsync(model.PromotionName, id);
             if (isDuplicate)
                 return BadRequest(new { message = "Tên khuyến mãi đã tồn tại." });
@@ -58,6 +65,7 @@ namespace ShopThueBanSach.Server.Controllers
             var result = await _service.UpdatePromotionAsync(id, model);
             return result ? Ok() : NotFound();
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)

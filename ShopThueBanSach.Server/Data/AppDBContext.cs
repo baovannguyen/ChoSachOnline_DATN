@@ -33,6 +33,8 @@ namespace ShopThueBanSach.Server.Data
 
         public DbSet<Payment> Payments { get; set; }
         public DbSet<RentOrder> RentOrders { get; set; }
+        public DbSet<FavoriteRentBook> FavoriteRentBooks { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -103,6 +105,20 @@ namespace ShopThueBanSach.Server.Data
                 .HasOne(f => f.SaleBook)
                 .WithMany(s => s.FavoriteBooks) // Nếu bạn có ICollection<FavoriteBook> trong SaleBook
                 .HasForeignKey(f => f.SaleBookId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // Cấu hình FavoriteRentBook
+            builder.Entity<FavoriteRentBook>().HasKey(f => new { f.UserId, f.RentBookId });
+
+            builder.Entity<FavoriteRentBook>()
+                .HasOne(f => f.User)
+                .WithMany(u => u.FavoriteRentBooks)
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<FavoriteRentBook>()
+                .HasOne(f => f.RentBook)
+                .WithMany(r => r.FavoriteRentBooks)
+                .HasForeignKey(f => f.RentBookId)
                 .OnDelete(DeleteBehavior.Cascade);
 
         }

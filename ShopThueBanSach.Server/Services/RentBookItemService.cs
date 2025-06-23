@@ -52,23 +52,33 @@ namespace ShopThueBanSach.Server.Services
 
         public async Task<RentBookItemDto?> CreateAsync(RentBookItemDto dto)
         {
-            if (dto.Condition < 0 || dto.Condition > 100)
-                return null; // chỉ check giới hạn 0-100 thôi
+            var rentBook = await _context.RentBooks
+                .Include(r => r.RentBookItems)
+                .FirstOrDefaultAsync(r => r.RentBookId == dto.RentBookId);
+
+            if (rentBook == null)
+                return null;
+
+            // Kiểm tra số lượng sách con đã tạo
+            int currentCount = rentBook.RentBookItems.Count;
+            if (currentCount >= rentBook.Quantity)
+                throw new InvalidOperationException("Số lượng sách thuê đã đạt tối đa.");
 
             var entity = new RentBookItem
             {
-                RentBookItemId = Guid.NewGuid().ToString(),
                 RentBookId = dto.RentBookId,
-                Status = dto.Status,
                 Condition = dto.Condition,
-                IsHidden = dto.Condition >= 80  // logic đảo ngược như bạn muốn
+                Status = RentBookItemStatus.Available,
+                IsHidden = dto.IsHidden
             };
 
             _context.RentBookItems.Add(entity);
             await _context.SaveChangesAsync();
 
-            return await GetByIdAsync(entity.RentBookItemId);
+            dto.RentBookItemId = entity.RentBookItemId;
+            return dto;
         }
+
 
         public async Task<RentBookItemDto?> UpdateAsync(string id, RentBookItemDto dto)
         {

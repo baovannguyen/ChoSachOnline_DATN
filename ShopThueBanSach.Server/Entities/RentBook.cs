@@ -26,11 +26,15 @@ namespace ShopThueBanSach.Server.Entities
 
         public bool IsHidden { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public string? PromotionId { get; set; } // ✅ thêm
+        public Promotion? Promotion { get; set; } // ✅ thêm
 
         public ICollection<AuthorRentBook> AuthorRentBooks { get; set; }
 
         public ICollection<CategoryRentBook> CategoryRentBooks { get; set; }
 
         public ICollection<RentBookItem> RentBookItems { get; set; }
+        public ICollection<FavoriteRentBook> FavoriteRentBooks { get; set; }
+
     }
 }

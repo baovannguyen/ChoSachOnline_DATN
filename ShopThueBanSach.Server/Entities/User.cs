@@ -14,6 +14,10 @@ namespace ShopThueBanSach.Server.Entities
         public ICollection<FavoriteBook> FavoriteBooks { get; set; }
 
         [JsonIgnore]
+        public ICollection<FavoriteRentBook> FavoriteRentBooks { get; set; }
+
+
+        [JsonIgnore]
         public ICollection<Voucher> Vouchers { get; set; }
     }
 }
