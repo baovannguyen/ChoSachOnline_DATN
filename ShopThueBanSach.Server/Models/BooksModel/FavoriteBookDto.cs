@@ -4,11 +4,11 @@
     {
         public string SaleBookId { get; set; }
         public string Title { get; set; }
-        public string ImageUrl { get; set; }
+        public string? ImageUrl { get; set; }
         public decimal Price { get; set; }
-
+        public decimal FinalPrice { get; set; } // ✅ GIÁ SAU KHUYẾN MÃI
         public string? PromotionName { get; set; }
-        public Double? DiscountPercentage { get; set; }
-        public string UserName { get; set; } // 👈 Thêm dòng này
+        public double? DiscountPercentage { get; set; }
+        public string UserName { get; set; }
     }
 }

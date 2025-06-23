@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ShopThueBanSach.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class gopmoinha : Migration
+    public partial class RemovePromotionFromRentBook : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -430,6 +430,31 @@ namespace ShopThueBanSach.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FavoriteRentBooks",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RentBookId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    FavoritedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FavoriteRentBooks", x => new { x.UserId, x.RentBookId });
+                    table.ForeignKey(
+                        name: "FK_FavoriteRentBooks_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_FavoriteRentBooks_RentBooks_RentBookId",
+                        column: x => x.RentBookId,
+                        principalTable: "RentBooks",
+                        principalColumn: "RentBookId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RentBookItems",
                 columns: table => new
                 {
@@ -665,6 +690,11 @@ namespace ShopThueBanSach.Server.Migrations
                 column: "SaleBookId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FavoriteRentBooks_RentBookId",
+                table: "FavoriteRentBooks",
+                column: "RentBookId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Payments_OrderId",
                 table: "Payments",
                 column: "OrderId",
@@ -744,6 +774,9 @@ namespace ShopThueBanSach.Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "FavoriteBooks");
+
+            migrationBuilder.DropTable(
+                name: "FavoriteRentBooks");
 
             migrationBuilder.DropTable(
                 name: "Payments");

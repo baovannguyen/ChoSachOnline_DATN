@@ -76,12 +76,22 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> Create([FromBody] RentBookItemDto dto)
         {
             dto.RentBookItemId = null;
-            var created = await _rentBookItemService.CreateAsync(dto);
-            if (created == null) return BadRequest("Điều kiện phải từ 0 đến 100");
 
-            await CreateNotificationIfStaffExistsAsync($"Thêm bản sao sách thuê cho sách: {dto.RentBookId}");
-            return CreatedAtAction(nameof(GetById), new { id = created.RentBookItemId }, created);
+            try
+            {
+                var created = await _rentBookItemService.CreateAsync(dto);
+                if (created == null)
+                    return BadRequest("Điều kiện phải từ 80 đến 100.");
+
+                await CreateNotificationIfStaffExistsAsync($"Thêm bản sao sách thuê cho sách: {dto.RentBookId}");
+                return CreatedAtAction(nameof(GetById), new { id = created.RentBookItemId }, created);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] RentBookItemDto dto)

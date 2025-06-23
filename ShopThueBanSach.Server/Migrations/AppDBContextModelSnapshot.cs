@@ -478,9 +478,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("PromotionId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("Publisher")
                         .HasColumnType("nvarchar(max)");
 
@@ -498,8 +495,6 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("RentBookId");
-
-                    b.HasIndex("PromotionId");
 
                     b.ToTable("RentBooks");
                 });
@@ -1008,15 +1003,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("SaleBook");
-                });
-
-            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBook", b =>
-                {
-                    b.HasOne("ShopThueBanSach.Server.Entities.Promotion", "Promotion")
-                        .WithMany()
-                        .HasForeignKey("PromotionId");
-
-                    b.Navigation("Promotion");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBookItem", b =>

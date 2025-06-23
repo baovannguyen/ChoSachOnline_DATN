@@ -21,7 +21,7 @@ namespace ShopThueBanSach.Server.Services
                 .Where(f => f.UserId == userId)
                 .Include(f => f.SaleBook)
                     .ThenInclude(sb => sb.Promotion)
-                .Include(f => f.User) // 👈 Thêm Include User
+                .Include(f => f.User)
                 .ToListAsync();
 
             return favorites.Select(f => new FavoriteBookDto
@@ -30,11 +30,15 @@ namespace ShopThueBanSach.Server.Services
                 Title = f.SaleBook.Title,
                 ImageUrl = f.SaleBook.ImageUrl,
                 Price = f.SaleBook.Price,
+                FinalPrice = f.SaleBook.Promotion != null
+                    ? f.SaleBook.Price * (1 - (decimal)(f.SaleBook.Promotion.DiscountPercentage / 100))
+                    : f.SaleBook.Price,
                 PromotionName = f.SaleBook.Promotion?.PromotionName,
                 DiscountPercentage = f.SaleBook.Promotion?.DiscountPercentage,
-                UserName = f.User.UserName // 👈 Thêm UserName vào kết quả
+                UserName = f.User.UserName
             }).ToList();
         }
+
 
 
 

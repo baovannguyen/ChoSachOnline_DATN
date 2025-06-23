@@ -19,7 +19,7 @@ namespace ShopThueBanSach.Server.Services
         {
             return await _context.FavoriteRentBooks
                 .Where(f => f.UserId == userId)
-                .Include(f => f.RentBook).ThenInclude(r => r.Promotion)
+                .Include(f => f.RentBook)
                 .Include(f => f.User)
                 .Select(f => new FavoriteRentBookDto
                 {
@@ -27,8 +27,6 @@ namespace ShopThueBanSach.Server.Services
                     Title = f.RentBook.Title,
                     ImageUrl = f.RentBook.ImageUrl,
                     Price = f.RentBook.Price,
-                    PromotionName = f.RentBook.Promotion != null ? f.RentBook.Promotion.PromotionName : null,
-                    DiscountPercentage = f.RentBook.Promotion != null ? f.RentBook.Promotion.DiscountPercentage : null,
                     UserName = f.User.UserName
                 })
                 .ToListAsync();
