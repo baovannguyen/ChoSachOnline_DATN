@@ -12,8 +12,8 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250621103123_gopmoinha")]
-    partial class gopmoinha
+    [Migration("20250623143826_RemovePromotionFromRentBook")]
+    partial class RemovePromotionFromRentBook
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -327,6 +327,24 @@ namespace ShopThueBanSach.Server.Migrations
                     b.HasIndex("SaleBookId");
 
                     b.ToTable("FavoriteBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.FavoriteRentBook", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RentBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("FavoritedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId", "RentBookId");
+
+                    b.HasIndex("RentBookId");
+
+                    b.ToTable("FavoriteRentBooks");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Payment", b =>
@@ -884,6 +902,25 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.FavoriteRentBook", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.RentBook", "RentBook")
+                        .WithMany("FavoriteRentBooks")
+                        .HasForeignKey("RentBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany("FavoriteRentBooks")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RentBook");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Payment", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", "Order")
@@ -1056,6 +1093,8 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.Navigation("CategoryRentBooks");
 
+                    b.Navigation("FavoriteRentBooks");
+
                     b.Navigation("RentBookItems");
                 });
 
@@ -1083,6 +1122,8 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.User", b =>
                 {
                     b.Navigation("FavoriteBooks");
+
+                    b.Navigation("FavoriteRentBooks");
 
                     b.Navigation("Vouchers");
                 });

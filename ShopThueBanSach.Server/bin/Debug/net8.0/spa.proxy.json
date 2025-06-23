@@ -3,7 +3,7 @@
 "ServerUrl": "https://localhost:55979",
 "RedirectUrl": "",
 "LaunchCommand": "npm run dev",
-"WorkingDirectory": "C:\\Users\\Minh Tri\\Documents\\Full Đồ An\\ShopThueBanSach.Server\\..\\shopthuebansach.client",
+"WorkingDirectory": "C:\\Users\\Minh Tri\\Documents\\Đồ án Tốt Nghiệp\\ShopThueBanSach.Server\\..\\shopthuebansach.client",
 "MaxTimeoutInSeconds": "120",
 "KeepRunning": "false"
 }

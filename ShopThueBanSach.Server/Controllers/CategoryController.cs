@@ -123,10 +123,30 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, CategoryDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // ❌ Không được để trống hoặc là "string"
+            if (string.IsNullOrWhiteSpace(dto.CategoryName) || string.IsNullOrWhiteSpace(dto.Description) ||
+                dto.CategoryName.Trim().ToLower() == "string" || dto.Description.Trim().ToLower() == "string")
+            {
+                return BadRequest(new { message = "Tên thể loại và mô tả không được để trống hoặc là 'string'." });
+            }
+
+            // ❌ Không được trùng tên với category khác (ngoại trừ chính nó)
+            bool isDuplicate = await _dbContext.Categories
+                .AnyAsync(c => c.Name.ToLower() == dto.CategoryName.Trim().ToLower() && c.CategoryId != id);
+
+            if (isDuplicate)
+            {
+                return BadRequest(new { message = "Tên thể loại đã tồn tại. Vui lòng nhập tên khác." });
+            }
+
             var result = await _service.UpdateAsync(id, dto);
             if (result == null) return NotFound();
             return Ok(result);
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)

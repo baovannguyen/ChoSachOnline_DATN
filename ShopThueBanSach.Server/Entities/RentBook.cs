@@ -26,8 +26,6 @@ namespace ShopThueBanSach.Server.Entities
 
         public bool IsHidden { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.Now;
-        public string? PromotionId { get; set; } // ✅ thêm
-        public Promotion? Promotion { get; set; } // ✅ thêm
 
         public ICollection<AuthorRentBook> AuthorRentBooks { get; set; }
 

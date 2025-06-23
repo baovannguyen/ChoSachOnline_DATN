@@ -9,7 +9,7 @@ namespace ShopThueBanSach.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // ✅ Bắt buộc đăng nhập với mọi endpoint
+    [Authorize]
     public class FavoriteRentBookController : ControllerBase
     {
         private readonly IFavoriteRentBookService _service;
@@ -21,12 +21,9 @@ namespace ShopThueBanSach.Server.Controllers
 
         private string? GetUserId()
         {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier); // ✅ đúng chuẩn ASP.NET
+            return User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
 
-        /// <summary>
-        /// Lấy danh sách sách thuê yêu thích của người dùng hiện tại
-        /// </summary>
         [HttpGet("my-favorites")]
         public async Task<IActionResult> GetMyFavorites()
         {
@@ -38,9 +35,6 @@ namespace ShopThueBanSach.Server.Controllers
             return Ok(favorites);
         }
 
-        /// <summary>
-        /// Thêm hoặc gỡ sách thuê khỏi yêu thích (toggle)
-        /// </summary>
         [HttpPost("toggle/{rentBookId}")]
         public async Task<IActionResult> ToggleFavorite(string rentBookId)
         {
@@ -54,9 +48,6 @@ namespace ShopThueBanSach.Server.Controllers
                 : BadRequest(new { message = "Cập nhật thất bại." });
         }
 
-        /// <summary>
-        /// Xóa sách thuê khỏi danh sách yêu thích
-        /// </summary>
         [HttpDelete("{rentBookId}")]
         public async Task<IActionResult> RemoveFavorite(string rentBookId)
         {
