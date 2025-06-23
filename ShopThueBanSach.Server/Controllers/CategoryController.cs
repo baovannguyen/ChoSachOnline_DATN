@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ShopThueBanSach.Server.Area.Admin.Service.Interface;
+using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Models.BooksModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 using System.Security.Claims;
-using ShopThueBanSach.Server.Data;
 
 namespace ShopThueBanSach.Server.Controllers
 {
@@ -14,36 +15,39 @@ namespace ShopThueBanSach.Server.Controllers
         private readonly ICategoryService _service;
         private readonly IActivityNotificationService _notificationService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IStaffService _staffService;
         private readonly AppDBContext _dbContext;
 
         public CategoryController(
             ICategoryService service,
             IActivityNotificationService notificationService,
             IHttpContextAccessor httpContextAccessor,
+            IStaffService staffService,
             AppDBContext dbContext)
         {
             _service = service;
             _notificationService = notificationService;
             _httpContextAccessor = httpContextAccessor;
+            _staffService = staffService;
             _dbContext = dbContext;
         }
 
         /* ------------------ Helper lấy StaffId ------------------ */
         private async Task<string?> GetCurrentStaffIdAsync()
         {
-            // Giả định ClaimTypes.Name chứa email
-            var userEmail = _httpContextAccessor.HttpContext?.User?
-                                         .FindFirst(ClaimTypes.Name)?.Value;
-
-            if (string.IsNullOrEmpty(userEmail)) return null;
-
-            return await _dbContext.Staffs
-                                   .Where(s => s.Email == userEmail && s.Role == "Staff")
-                                   .Select(s => s.StaffId)
-                                   .FirstOrDefaultAsync();
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var exists = await _staffService.ExistsAsync(userId);
+                if (exists)
+                {
+                    return userId;
+                }
+            }
+            return null;
         }
 
-        private async Task NotifyAsync(string description)
+        private async Task CreateNotificationIfValidAsync(string description)
         {
             var staffId = await GetCurrentStaffIdAsync();
             if (!string.IsNullOrEmpty(staffId))
@@ -90,8 +94,7 @@ namespace ShopThueBanSach.Server.Controllers
             }
 
             var result = await _service.CreateAsync(dto);
-
-           
+            await CreateNotificationIfValidAsync($"Thêm thể loại: {dto.CategoryName}");
 
             return CreatedAtAction(nameof(GetById), new { id = result!.CategoryId }, result);
         }
@@ -144,6 +147,8 @@ namespace ShopThueBanSach.Server.Controllers
 
             var result = await _service.UpdateAsync(id, dto);
             if (result == null) return NotFound();
+
+            await CreateNotificationIfValidAsync($"Cập nhật thể loại: {dto.CategoryName}");
             return Ok(result);
         }
 
@@ -153,6 +158,8 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var success = await _service.DeleteAsync(id);
             if (!success) return NotFound();
+
+            await CreateNotificationIfValidAsync($"Xóa thể loại: {id}");
             return NoContent();
         }
     }

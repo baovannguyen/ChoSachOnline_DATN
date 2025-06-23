@@ -34,7 +34,7 @@ namespace ShopThueBanSach.Server.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<RentOrder> RentOrders { get; set; }
         public DbSet<FavoriteRentBook> FavoriteRentBooks { get; set; }
-
+        public DbSet<Comment> Comments { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

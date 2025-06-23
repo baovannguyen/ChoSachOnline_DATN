@@ -29,20 +29,22 @@ namespace ShopThueBanSach.Server.Controllers
         // 🔍 Lấy StaffId từ JWT Claims
         private async Task<string?> GetCurrentStaffIdAsync()
         {
-            // Giả định ClaimTypes.Name chứa email đăng nhập
-            var email = _httpContextAccessor.HttpContext?.User?
-                                          .FindFirst(ClaimTypes.Name)?.Value;
-
-            return string.IsNullOrEmpty(email)
-                ? null
-                : await _staffService.GetStaffIdByEmailAsync(email);
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var exists = await _staffService.ExistsAsync(userId);
+                if (exists)
+                {
+                    return userId;
+                }
+            }
+            return null;
         }
 
-        private async Task CreateNotificationIfStaffExistsAsync(string description)
+        private async Task CreateNotificationIfValidAsync(string description)
         {
             var staffId = await GetCurrentStaffIdAsync();
-            if (!string.IsNullOrEmpty(staffId) &&
-                await _staffService.ExistsAsync(staffId))
+            if (!string.IsNullOrEmpty(staffId))
             {
                 await _notificationService.CreateNotificationAsync(staffId, description);
             }
@@ -73,7 +75,7 @@ namespace ShopThueBanSach.Server.Controllers
                 return BadRequest(new { message = "Tiêu đề sách thuê đã tồn tại." });
 
             var id = await _service.CreateAsync(dto, dto.ImageFile); // ✅ pass ảnh
-            await CreateNotificationIfStaffExistsAsync($"Thêm sách thuê: {dto.Title}");
+            await CreateNotificationIfValidAsync($"Thêm sách thuê: {dto.Title}");
             return CreatedAtAction(nameof(GetById), new { id }, dto);
         }
 
@@ -91,7 +93,7 @@ namespace ShopThueBanSach.Server.Controllers
             var result = await _service.UpdateAsync(id, dto);
             if (!result) return NotFound();
 
-            await CreateNotificationIfStaffExistsAsync($"Cập nhật sách thuê: {dto.Title}");
+            await CreateNotificationIfValidAsync($"Cập nhật sách thuê: {dto.Title}");
             return Ok(new { message = "Cập nhật sách thành công." });
         }
 
@@ -101,7 +103,7 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var result = await _service.DeleteAsync(id);
             if (result)
-                await CreateNotificationIfStaffExistsAsync($"Xóa sách thuê: {id}");
+                await CreateNotificationIfValidAsync($"Xóa sách thuê: {id}");
             return result ? NoContent() : NotFound();
         }
 
@@ -110,7 +112,7 @@ namespace ShopThueBanSach.Server.Controllers
         {
             var result = await _service.SetVisibilityAsync(id, isHidden == 1);
             if (result)
-                await CreateNotificationIfStaffExistsAsync($"Cập nhật hiển thị sách thuê: {id} -> {(isHidden == 1 ? "ẩn" : "hiện")}");
+                await CreateNotificationIfValidAsync($"Cập nhật hiển thị sách thuê: {id} -> {(isHidden == 1 ? "ẩn" : "hiện")}");
             return result ? NoContent() : NotFound();
         }
     }

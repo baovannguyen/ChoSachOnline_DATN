@@ -7,3 +7,4 @@ D:\DATN\gopsrc\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.Co
 C:\Users\win11\source\repos\BaoQuy\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
 C:\Users\Minh Tri\Documents\Full Đồ An\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
 C:\Users\Minh Tri\Documents\Đồ án Tốt Nghiệp\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
+C:\Users\win11\source\repos\KhoaUwU\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache

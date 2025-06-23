@@ -43,24 +43,54 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
         // GET: api/ActivityNotification/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(string id)
+        /*  [HttpGet("{id}")]
+          public async Task<IActionResult> GetById(string id)
+          {
+              var notification = await _context.ActivityNotifications
+                  .Include(n => n.Staff)
+                  .FirstOrDefaultAsync(n => n.NotificationId == id);
+
+              if (notification == null)
+                  return NotFound();
+
+              return Ok(new
+              {
+                  notification.NotificationId,
+                  notification.Description,
+                  notification.CreatedDate,
+                  StaffId = notification.StaffId,
+                  StaffName = notification.Staff?.FullName ?? "Unknown"
+              });
+          }*/
+        [HttpGet("staff/{staffId}")]
+        public async Task<IActionResult> GetByStaffId(string staffId)
         {
-            var notification = await _context.ActivityNotifications
+            var notifications = await _context.ActivityNotifications
+                .Where(n => n.StaffId == staffId)
                 .Include(n => n.Staff)
-                .FirstOrDefaultAsync(n => n.NotificationId == id);
+                .OrderByDescending(n => n.CreatedDate)
+                .Select(n => new
+                {
+                    n.NotificationId,
+                    n.Description,
+                    n.CreatedDate,
+                    StaffId = n.StaffId,
+                    StaffName = n.Staff != null ? n.Staff.FullName : "Unknown"
+                })
+                .ToListAsync();
 
-            if (notification == null)
-                return NotFound();
-
-            return Ok(new
-            {
-                notification.NotificationId,
-                notification.Description,
-                notification.CreatedDate,
-                StaffId = notification.StaffId,
-                StaffName = notification.Staff?.FullName ?? "Unknown"
-            });
+            return Ok(notifications);
         }
+        [HttpPost("test-notify")]
+        public async Task<IActionResult> TestNotification([FromQuery] string staffId, [FromQuery] string message)
+        {
+            if (string.IsNullOrWhiteSpace(staffId) || string.IsNullOrWhiteSpace(message))
+                return BadRequest("Thiếu staffId hoặc message");
+
+            await _notificationService.CreateNotificationAsync(staffId, message);
+            return Ok(new { success = true, staffId, message });
+        }
+
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ShopThueBanSach.Server.Models.AuthModel;
+using ShopThueBanSach.Server.Models.UserModel;
 
 namespace ShopThueBanSach.Server.Services.Interfaces
 {
@@ -8,5 +9,7 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<UserDto?> GetByIdAsync(string id);
         Task<bool> UpdateAsync(UpdateUserDto dto);
         Task<bool> DeleteAsync(string id);
+        Task<bool> UpdateCustomerAsync(UpdateCustomerDto dto);
+
     }
 }

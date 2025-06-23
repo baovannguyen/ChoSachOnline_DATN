@@ -22,7 +22,7 @@ namespace ShopThueBanSach.Server.Services
             return await _context.Slides.ToListAsync();
         }
 
-        public async Task<Slide?> GetByIdAsync(int id)
+        public async Task<Slide?> GetByIdAsync(string id)
         {
             return await _context.Slides.FindAsync(id);
         }
@@ -42,7 +42,7 @@ namespace ShopThueBanSach.Server.Services
             return slide;
         }
 
-        public async Task<Slide?> UpdateAsync(int id, SlideDto dto)
+        public async Task<Slide?> UpdateAsync(string id, SlideDto dto)
         {
             var slide = await _context.Slides.FindAsync(id);
             if (slide == null) return null;
@@ -62,7 +62,7 @@ namespace ShopThueBanSach.Server.Services
             return slide;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(string id)
         {
             var slide = await _context.Slides.FindAsync(id);
             if (slide == null) return false;
