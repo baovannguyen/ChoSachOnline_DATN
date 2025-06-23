@@ -11,12 +11,38 @@ namespace ShopThueBanSach.Server.Controllers
     public class SaleBooksController : ControllerBase
     {
         private readonly ISaleBookService _service;
+        private readonly IActivityNotificationService _notificationService;
+        private readonly IStaffService _staffService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public SaleBooksController(ISaleBookService service)
+        public SaleBooksController(
+            ISaleBookService service,
+            IActivityNotificationService notificationService,
+            IStaffService staffService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _service = service;
+            _notificationService = notificationService;
+            _staffService = staffService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
+        private async Task<string?> GetCurrentStaffIdAsync()
+        {
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId) && await _staffService.ExistsAsync(userId))
+                return userId;
+            return null;
+        }
+
+        private async Task CreateNotificationIfValidAsync(string description)
+        {
+            var staffId = await GetCurrentStaffIdAsync();
+            if (!string.IsNullOrEmpty(staffId))
+            {
+                await _notificationService.CreateNotificationAsync(staffId, description);
+            }
+        }
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -28,8 +54,7 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> GetById(string id)
         {
             var result = await _service.GetByIdAsync(id);
-            if (result == null) return NotFound();
-            return Ok(result);
+            return result == null ? NotFound() : Ok(result);
         }
 
 
@@ -48,6 +73,8 @@ namespace ShopThueBanSach.Server.Controllers
                 return BadRequest(new { message = "Tiêu đề sách đã tồn tại." });
 
             var id = await _service.CreateAsync(dto);
+            await CreateNotificationIfValidAsync($"Thêm sách bán: {dto.Title}");
+
             var result = await _service.GetByIdAsync(id);
             return CreatedAtAction(nameof(GetById), new { id }, result);
         }
@@ -68,6 +95,9 @@ namespace ShopThueBanSach.Server.Controllers
                 return BadRequest(new { message = "Tiêu đề sách đã tồn tại." });
 
             var success = await _service.UpdateAsync(id, dto);
+            if (success)
+                await CreateNotificationIfValidAsync($"Cập nhật sách bán: {dto.Title}");
+
             return success ? Ok() : NotFound();
         }
 
@@ -76,17 +106,22 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> Delete(string id)
         {
             var success = await _service.DeleteAsync(id);
-            if (!success) return NotFound();
-            return NoContent();
+            if (success)
+                await CreateNotificationIfValidAsync($"Xóa sách bán: {id}");
+            return success ? NoContent() : NotFound();
         }
 
         [HttpPut("set-visibility/{id}/{isHidden}")]
         public async Task<IActionResult> SetVisibility(string id, int isHidden)
         {
-            if (isHidden != 0 && isHidden != 1) return BadRequest("isHidden must be 0 (false) or 1 (true)");
+            if (isHidden != 0 && isHidden != 1)
+                return BadRequest("isHidden must be 0 (false) or 1 (true)");
+
             var success = await _service.SetVisibilityAsync(id, isHidden == 1);
-            if (!success) return NotFound();
-            return Ok();
+            if (success)
+                await CreateNotificationIfValidAsync($"Cập nhật hiển thị sách bán: {id} -> {(isHidden == 1 ? "ẩn" : "hiện")}");
+
+            return success ? Ok() : NotFound();
         }
     }
 }

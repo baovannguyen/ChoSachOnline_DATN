@@ -5,6 +5,7 @@ using ShopThueBanSach.Server.Area.Admin.Service;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Models.AuthModel;
+using ShopThueBanSach.Server.Models.UserModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 
 namespace ShopThueBanSach.Server.Services
@@ -13,23 +14,22 @@ namespace ShopThueBanSach.Server.Services
     {
         private readonly UserManager<User> _userManager;
         private readonly IStaffService _staffService;
+
         public UserManagerService(UserManager<User> userManager, IStaffService staffService)
         {
             _userManager = userManager;
             _staffService = staffService;
         }
 
-        // 🔸 LẤY TẤT CẢ USER CÓ ROLE NULL HOẶC "Khách hàng"
         public async Task<IEnumerable<UserDto>> GetAllAsync()
         {
             var users = await _userManager.Users
-                                          .Where(u => u.Role == null || u.Role == "Khách hàng")
-                                          .ToListAsync();
+                .Where(u => u.Role == null || u.Role == "Khách hàng")
+                .ToListAsync();
 
             return users.Select(u => MapToDto(u));
         }
 
-        // 🔸 LẤY USER THEO ID và kiểm tra Role
         public async Task<UserDto?> GetByIdAsync(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -40,7 +40,6 @@ namespace ShopThueBanSach.Server.Services
             return MapToDto(user);
         }
 
-        // 🔸 CHỈ CẬP NHẬT NẾU USER ĐÚNG ĐỐI TƯỢNG
         public async Task<bool> UpdateAsync(UpdateUserDto dto)
         {
             var user = await _userManager.FindByIdAsync(dto.Id);
@@ -49,8 +48,20 @@ namespace ShopThueBanSach.Server.Services
 
             var oldRole = user.Role;
 
-            if (dto.Email != null) user.Email = dto.Email;
+            // ✅ KHÔNG cập nhật Email — tránh lỗi và không cho sửa
+            // ✅ Đảm bảo Email không bị null (đề phòng người dùng cũ bị thiếu email)
+            if (string.IsNullOrEmpty(user.Email))
+            {
+                var existing = await _userManager.FindByIdAsync(dto.Id);
+                if (!string.IsNullOrEmpty(existing?.Email))
+                    user.Email = existing.Email;
+                else
+                    user.Email = $"{Guid.NewGuid()}@placeholder.local"; // fallback nếu dữ liệu sai
+            }
+
+            // Cập nhật các thông tin cho phép
             if (dto.Address != null) user.Address = dto.Address;
+            if (!string.IsNullOrEmpty(dto.PhoneNumber)) user.PhoneNumber = dto.PhoneNumber;
             if (dto.DateOfBirth.HasValue) user.DateOfBirth = dto.DateOfBirth.Value;
             if (dto.Points.HasValue) user.Points = dto.Points.Value;
             if (dto.ImageUser != null) user.ImageUser = dto.ImageUser;
@@ -59,34 +70,39 @@ namespace ShopThueBanSach.Server.Services
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded) return false;
 
-            // Đồng bộ bảng Staff
+            // Nếu đổi sang Staff → tạo staff mới
             if (oldRole != "Staff" && user.Role == "Staff")
             {
-                var staff = new Staff
+                var existingStaff = await _staffService.GetByIdAsync(user.Id);
+                if (existingStaff == null)
                 {
-                    StaffId = "STF_" + Guid.NewGuid().ToString("N")[..8],
-                    FullName = user.UserName,
-                    Email = user.Email,
-                    Address = user.Address,
-                    DateOfBirth = user.DateOfBirth,
-                    Role = "Staff",
-                    Password = "Default@123" // có thể để trống hoặc random
-                };
+                    var staff = new Staff
+                    {
+                        StaffId = user.Id,
+                        FullName = user.UserName,
+                        Address = user.Address,
+                        DateOfBirth = user.DateOfBirth,
+                        PhoneNumber = user.PhoneNumber,
+                        Role = "Staff",
+                        Password = "Default@123",
+                        Email = user.Email
+                    };
 
-                await _staffService.AddAsync(staff);
+                    await _staffService.AddAsync(staff);
+                }
             }
+            // Nếu chuyển từ Staff sang khác → xóa staff
             else if (oldRole == "Staff" && user.Role != "Staff")
             {
-                // Gọi bằng ép kiểu để dùng được DeleteByEmailAsync
                 if (_staffService is StaffService concreteStaffService)
                 {
-                    await concreteStaffService.DeleteByEmailAsync(user.Email);
+                    await concreteStaffService.DeleteByIdAsync(user.Id);
                 }
             }
 
             return true;
         }
-        // 🔸 XOÁ USER ĐÚNG ĐỐI TƯỢNG
+
         public async Task<bool> DeleteAsync(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -97,17 +113,32 @@ namespace ShopThueBanSach.Server.Services
             return result.Succeeded;
         }
 
-        // 👉 Helper: map entity → DTO
         private static UserDto MapToDto(User u) => new()
         {
             Id = u.Id,
             UserName = u.UserName,
-            Email = u.Email,
             Role = u.Role,
             Address = u.Address,
+            PhoneNumber = u.PhoneNumber,
             DateOfBirth = u.DateOfBirth,
             Points = u.Points,
             ImageUser = u.ImageUser
         };
+        public async Task<bool> UpdateCustomerAsync(UpdateCustomerDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(dto.Id);
+            if (user == null || !(user.Role == null || user.Role == "Khách hàng"))
+                return false;
+
+            if (dto.Address != null) user.Address = dto.Address;
+            if (!string.IsNullOrEmpty(dto.PhoneNumber)) user.PhoneNumber = dto.PhoneNumber;
+            if (dto.DateOfBirth.HasValue) user.DateOfBirth = dto.DateOfBirth.Value;
+            if (dto.Points.HasValue) user.Points = dto.Points.Value;
+            if (dto.ImageUser != null) user.ImageUser = dto.ImageUser;
+
+            var result = await _userManager.UpdateAsync(user);
+            return result.Succeeded;
+        }
+
     }
 }

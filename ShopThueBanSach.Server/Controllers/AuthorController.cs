@@ -28,13 +28,24 @@ namespace ShopThueBanSach.Server.Controllers
 
         private async Task<string?> GetCurrentStaffIdAsync()
         {
-            var email = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
-            return email != null ? await _staffService.GetStaffIdByEmailAsync(email) : null;
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var exists = await _staffService.ExistsAsync(userId);
+                if (exists)
+                {
+                    return userId; // chính là StaffId
+                }
+            }
+
+            return null;
         }
 
         private async Task CreateNotificationIfValidAsync(string description)
         {
-            var staffId = await GetCurrentStaffIdAsync();
+            var staffId = await GetCurrentStaffIdAsync(); // dùng userId (NameIdentifier)
+
             if (!string.IsNullOrEmpty(staffId) && await _staffService.ExistsAsync(staffId))
             {
                 await _notificationService.CreateNotificationAsync(staffId, description);
@@ -92,7 +103,6 @@ namespace ShopThueBanSach.Server.Controllers
                 await CreateNotificationIfValidAsync($"Xóa tác giả: {id}");
             return result ? Ok() : NotFound();
         }
-
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {

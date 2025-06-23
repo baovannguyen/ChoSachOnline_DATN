@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ShopThueBanSach.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class gopmoinha : Migration
+    public partial class khoadatn : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -136,28 +136,6 @@ namespace ShopThueBanSach.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RentBooks",
-                columns: table => new
-                {
-                    RentBookId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Publisher = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Translator = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Size = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Pages = table.Column<int>(type: "int", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsHidden = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RentBooks", x => x.RentBookId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RentOrders",
                 columns: table => new
                 {
@@ -182,8 +160,7 @@ namespace ShopThueBanSach.Server.Migrations
                 name: "Slides",
                 columns: table => new
                 {
-                    SlideId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SlideId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LinkUrl = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
@@ -317,6 +294,27 @@ namespace ShopThueBanSach.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Comments",
+                columns: table => new
+                {
+                    CommentId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    BookId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ParentCommentId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Comments", x => x.CommentId);
+                    table.ForeignKey(
+                        name: "FK_Comments_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Vouchers",
                 columns: table => new
                 {
@@ -352,6 +350,34 @@ namespace ShopThueBanSach.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RentBooks",
+                columns: table => new
+                {
+                    RentBookId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Publisher = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Translator = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Size = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Pages = table.Column<int>(type: "int", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsHidden = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PromotionId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentBooks", x => x.RentBookId);
+                    table.ForeignKey(
+                        name: "FK_RentBooks_Promotions_PromotionId",
+                        column: x => x.PromotionId,
+                        principalTable: "Promotions",
+                        principalColumn: "PromotionId");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SaleBooks",
                 columns: table => new
                 {
@@ -379,6 +405,47 @@ namespace ShopThueBanSach.Server.Migrations
                         principalTable: "Promotions",
                         principalColumn: "PromotionId",
                         onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Payments",
+                columns: table => new
+                {
+                    PaymentId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Method = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.PaymentId);
+                    table.ForeignKey(
+                        name: "FK_Payments_RentOrders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "RentOrders",
+                        principalColumn: "OrderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ActivityNotifications",
+                columns: table => new
+                {
+                    NotificationId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    StaffId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivityNotifications", x => x.NotificationId);
+                    table.ForeignKey(
+                        name: "FK_ActivityNotifications_Staffs_StaffId",
+                        column: x => x.StaffId,
+                        principalTable: "Staffs",
+                        principalColumn: "StaffId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -430,6 +497,31 @@ namespace ShopThueBanSach.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FavoriteRentBooks",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RentBookId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    FavoritedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FavoriteRentBooks", x => new { x.UserId, x.RentBookId });
+                    table.ForeignKey(
+                        name: "FK_FavoriteRentBooks_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_FavoriteRentBooks_RentBooks_RentBookId",
+                        column: x => x.RentBookId,
+                        principalTable: "RentBooks",
+                        principalColumn: "RentBookId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RentBookItems",
                 columns: table => new
                 {
@@ -448,47 +540,6 @@ namespace ShopThueBanSach.Server.Migrations
                         column: x => x.RentBookId,
                         principalTable: "RentBooks",
                         principalColumn: "RentBookId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Payments",
-                columns: table => new
-                {
-                    PaymentId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Method = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Payments", x => x.PaymentId);
-                    table.ForeignKey(
-                        name: "FK_Payments_RentOrders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "RentOrders",
-                        principalColumn: "OrderId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ActivityNotifications",
-                columns: table => new
-                {
-                    NotificationId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    StaffId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ActivityNotifications", x => x.NotificationId);
-                    table.ForeignKey(
-                        name: "FK_ActivityNotifications_Staffs_StaffId",
-                        column: x => x.StaffId,
-                        principalTable: "Staffs",
-                        principalColumn: "StaffId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -660,9 +711,19 @@ namespace ShopThueBanSach.Server.Migrations
                 column: "SaleBookId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Comments_CreatedById",
+                table: "Comments",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FavoriteBooks_SaleBookId",
                 table: "FavoriteBooks",
                 column: "SaleBookId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FavoriteRentBooks_RentBookId",
+                table: "FavoriteRentBooks",
+                column: "RentBookId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_OrderId",
@@ -674,6 +735,11 @@ namespace ShopThueBanSach.Server.Migrations
                 name: "IX_RentBookItems_RentBookId",
                 table: "RentBookItems",
                 column: "RentBookId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentBooks_PromotionId",
+                table: "RentBooks",
+                column: "PromotionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RentOrderDetails_OrderId",
@@ -740,10 +806,16 @@ namespace ShopThueBanSach.Server.Migrations
                 name: "CategorySaleBook");
 
             migrationBuilder.DropTable(
+                name: "Comments");
+
+            migrationBuilder.DropTable(
                 name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "FavoriteBooks");
+
+            migrationBuilder.DropTable(
+                name: "FavoriteRentBooks");
 
             migrationBuilder.DropTable(
                 name: "Payments");
@@ -785,10 +857,10 @@ namespace ShopThueBanSach.Server.Migrations
                 name: "DiscountCodes");
 
             migrationBuilder.DropTable(
-                name: "Promotions");
+                name: "RentBooks");
 
             migrationBuilder.DropTable(
-                name: "RentBooks");
+                name: "Promotions");
         }
     }
 }

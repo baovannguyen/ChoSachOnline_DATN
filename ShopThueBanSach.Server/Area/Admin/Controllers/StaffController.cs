@@ -44,15 +44,15 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
 
         /* ---------- CREATE ---------- */
         // POST: api/Staff
-      /*  [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Staff staff)
-        {
-            // đảm bảo Role luôn là "Staff"
-            staff.Role = "Staff";
+        /*  [HttpPost]
+          public async Task<IActionResult> Create([FromBody] Staff staff)
+          {
+              // đảm bảo Role luôn là "Staff"
+              staff.Role = "Staff";
 
-            var created = await _staffService.AddAsync(staff);
-            return CreatedAtAction(nameof(Get), new { id = created.StaffId }, created);
-        }*/
+              var created = await _staffService.AddAsync(staff);
+              return CreatedAtAction(nameof(Get), new { id = created.StaffId }, created);
+          }*/
 
         /* ---------- UPDATE ---------- */
         // PUT: api/Staff/{id}

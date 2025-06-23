@@ -46,6 +46,36 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("ActivityNotifications");
                 });
 
+            modelBuilder.Entity("Comment", b =>
+                {
+                    b.Property<string>("CommentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BookId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ParentCommentId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CommentId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("Comments");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -686,11 +716,8 @@ namespace ShopThueBanSach.Server.Migrations
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Slide", b =>
                 {
-                    b.Property<int>("SlideId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SlideId"));
+                    b.Property<string>("SlideId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
@@ -832,6 +859,15 @@ namespace ShopThueBanSach.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("Comment", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

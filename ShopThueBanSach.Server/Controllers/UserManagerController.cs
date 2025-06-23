@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Models.AuthModel;
+using ShopThueBanSach.Server.Models.UserModel;
 using ShopThueBanSach.Server.Services.Interfaces;
 
 namespace ShopThueBanSach.Server.Controllers
@@ -38,6 +39,14 @@ namespace ShopThueBanSach.Server.Controllers
             var success = await _userService.UpdateAsync(dto);
             return success ? Ok() : NotFound();
         }
+        // PUT api/usermanager/customer
+        [HttpPut("customer")]
+        public async Task<IActionResult> UpdateCustomer([FromBody] UpdateCustomerDto dto)
+        {
+            var success = await _userService.UpdateCustomerAsync(dto);
+            return success ? Ok() : NotFound();
+        }
+
 
         // DELETE api/usermanager/{id}
         [HttpDelete("{id}")]

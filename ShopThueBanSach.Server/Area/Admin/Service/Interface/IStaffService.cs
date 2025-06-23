@@ -27,9 +27,12 @@ namespace ShopThueBanSach.Server.Area.Admin.Service.Interface
         Task<bool> ExistsAsync(string staffId);
 
         // Lấy StaffId thông qua email (trả về null nếu không tìm thấy)
-      
-           
-           Task<string?> GetStaffIdByEmailAsync(string email);
+
+        Task<bool> DeleteByIdAsync(string id);
+
+        Task<string?> GetStaffIdByIdAsync(string userId);
+
+        Task<string?> GetStaffIdByEmailAsync(string email);
         Task<bool> DeleteByEmailAsync(string email);
         Task<IEnumerable<UserDto>> GetAllStaffUsersAsync();
     }
