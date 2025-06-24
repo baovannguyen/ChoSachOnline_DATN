@@ -26,13 +26,13 @@ namespace ShopThueBanSach.Server.Services
 
             if (result.ResultCode == 0)
             {
-                order.Status = "Paid";
+                order.Status = Models.OrderStatus.Confirmed;
                 order.OrderDate = DateTime.Now;
                 await _context.SaveChangesAsync();
                 return new OkObjectResult("Thanh toán thành công");
             }
 
-            order.Status = "Failed";
+            order.Status = Models.OrderStatus.Failed;
             await _context.SaveChangesAsync();
             return new OkObjectResult("Thanh toán thất bại");
         }

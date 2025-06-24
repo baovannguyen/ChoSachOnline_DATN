@@ -12,8 +12,8 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250623143826_RemovePromotionFromRentBook")]
-    partial class RemovePromotionFromRentBook
+    [Migration("20250624172854_gop")]
+    partial class gop
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -47,6 +47,36 @@ namespace ShopThueBanSach.Server.Migrations
                     b.HasIndex("StaffId");
 
                     b.ToTable("ActivityNotifications");
+                });
+
+            modelBuilder.Entity("Comment", b =>
+                {
+                    b.Property<string>("CommentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BookId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ParentCommentId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CommentId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -535,6 +565,12 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<string>("OrderId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<decimal?>("ActualRefundAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ActualReturnDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
@@ -553,9 +589,8 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TotalDeposit")
                         .HasColumnType("decimal(18,2)");
@@ -565,9 +600,11 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("OrderId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("RentOrders");
                 });
@@ -579,6 +616,12 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("ActualRefundAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ActualReturnDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("BookPrice")
                         .HasColumnType("decimal(18,2)");
@@ -600,6 +643,9 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.Property<decimal>("RentalFee")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ReturnCondition")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TotalFee")
                         .HasColumnType("decimal(18,2)");
@@ -665,6 +711,83 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("SaleBooks");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrder", b =>
+                {
+                    b.Property<string>("OrderId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("HasShippingFee")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("OriginalTotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("ShippingFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("OrderId");
+
+                    b.ToTable("SaleOrders");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrderDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("SubTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("SaleOrderDetails");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", b =>
                 {
                     b.Property<string>("AuthorId")
@@ -684,11 +807,8 @@ namespace ShopThueBanSach.Server.Migrations
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Slide", b =>
                 {
-                    b.Property<int>("SlideId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SlideId"));
+                    b.Property<string>("SlideId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
@@ -830,6 +950,15 @@ namespace ShopThueBanSach.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("Comment", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1019,6 +1148,17 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("RentBook");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrder", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrderDetail", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", "Order")
@@ -1046,6 +1186,17 @@ namespace ShopThueBanSach.Server.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Promotion");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrderDetail", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.SaleOrder", "Order")
+                        .WithMany("Details")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Voucher", b =>
@@ -1110,6 +1261,11 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("CategorySaleBooks");
 
                     b.Navigation("FavoriteBooks");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrder", b =>
+                {
+                    b.Navigation("Details");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", b =>

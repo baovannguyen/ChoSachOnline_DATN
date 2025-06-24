@@ -182,9 +182,15 @@ namespace ShopThueBanSach.Server.Services
     {
         new Claim(ClaimTypes.NameIdentifier, user.Id),
         new Claim(ClaimTypes.Name, user.UserName!),
-        new Claim(ClaimTypes.Role, user.Role ?? "Khách hàng"), // GÁN ROLE
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
     };
+
+            // 🟢 Thêm Role vào Claims
+            var roles = _userManager.GetRolesAsync(user).Result;
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

@@ -1,4 +1,5 @@
 ﻿using ShopThueBanSach.Server.Entities.Relationships;
+using System.Text.Json.Serialization;
 
 namespace ShopThueBanSach.Server.Entities
 {
@@ -30,7 +31,7 @@ namespace ShopThueBanSach.Server.Entities
         public ICollection<AuthorRentBook> AuthorRentBooks { get; set; }
 
         public ICollection<CategoryRentBook> CategoryRentBooks { get; set; }
-
+        [JsonIgnore]
         public ICollection<RentBookItem> RentBookItems { get; set; }
         public ICollection<FavoriteRentBook> FavoriteRentBooks { get; set; }
 

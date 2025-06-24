@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
+using ShopThueBanSach.Server.Models;
 using ShopThueBanSach.Server.Models.CartRentModel;
 using ShopThueBanSach.Server.Models.RentOrderModel;
 using ShopThueBanSach.Server.Services.Interfaces;
@@ -89,6 +90,7 @@ namespace ShopThueBanSach.Server.Services
             const int baseRentalDays = 60;
             const decimal extraFeePerDay = 1000;
             const decimal shippingFee = 20000;
+            // Cong 3k khi qua ngay thue
 
             decimal totalFee = 0;
             decimal totalDeposit = 0;
@@ -150,7 +152,7 @@ namespace ShopThueBanSach.Server.Services
                 TotalDeposit = totalDeposit,
                 TotalFee = totalFee + totalDeposit,
                 OrderDate = DateTime.Now,
-                Status = "Pending"
+                Status = rentalDays > 60 ? OrderStatus.Pending : OrderStatus.Overdue,
             };
 
             return new RentOrderResult
@@ -177,10 +179,5 @@ namespace ShopThueBanSach.Server.Services
             _httpContextAccessor.HttpContext?.Session.Remove("RentalCart");
         }
 
-        private class RentOrderResult
-        {
-            public RentOrder Order { get; set; }
-            public List<RentOrderDetail> Details { get; set; }
-        }
     }
 }

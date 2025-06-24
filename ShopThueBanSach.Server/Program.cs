@@ -11,6 +11,7 @@ using ShopThueBanSach.Server.Models;
 using ShopThueBanSach.Server.Models.PaymentMethod;
 using ShopThueBanSach.Server.Services;
 using ShopThueBanSach.Server.Services.Interfaces;
+using System.Security.Claims;
 using System.Text;
 
 namespace ShopThueBanSach.Server
@@ -101,7 +102,10 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddScoped<IFavoriteRentBookService, FavoriteRentBookService>();
 
-
+            builder.Services.AddScoped<ISaleCartService, SaleCartService>();
+            builder.Services.AddScoped<ISaleOrderService, SaleOrderService>();
+            builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
+            builder.Services.AddScoped<ISaleOrderManagementService, SaleOrderManagementService>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
@@ -132,7 +136,8 @@ namespace ShopThueBanSach.Server
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                    RoleClaimType = ClaimTypes.Role
                 };
             });
             builder.Services.AddCors(options =>

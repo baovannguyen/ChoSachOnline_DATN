@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using ShopThueBanSach.Server.Models.CartRentModel;
+using ShopThueBanSach.Server.Models;
 
 namespace ShopThueBanSach.Server.Entities
 {
@@ -8,23 +9,32 @@ namespace ShopThueBanSach.Server.Entities
     {
         [Key]
         public string OrderId { get; set; } = Guid.NewGuid().ToString();
-        public string UserId { get; set; }
+
+        public string UserId { get; set; }  // FK
+
+        [ForeignKey("UserId")]
+        public User? User { get; set; }     // Navigation property ✅
+
         [NotMapped]
         public List<CartItemRent> Items { get; set; } = new();
 
         public DateTime OrderDate { get; set; } = DateTime.Now;
 
-        public DateTime StartDate { get; set; }  // Ngày bắt đầu thuê
-        public DateTime EndDate { get; set; }    // Ngày kết thúc thuê
-        public int RentalDays { get; set; }      // Số ngày thuê
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int RentalDays { get; set; }
 
         public bool HasShippingFee { get; set; } = false;
         public decimal ShippingFee { get; set; } = 0;
 
-        public decimal TotalFee { get; set; }         // Phí thuê
-        public decimal TotalDeposit { get; set; }     // Tổng tiền cọc
+        public decimal TotalFee { get; set; }
+        public decimal TotalDeposit { get; set; }
+
         public Payment? Payment { get; set; }
 
-        public string Status { get; set; } = "Pending"; // trạng thái đơn thuê ("Pending", "Confirmed", "Delivered", "Returned", "Overdue", ...)
+        public DateTime? ActualReturnDate { get; set; }
+        public decimal? ActualRefundAmount { get; set; }
+
+        public OrderStatus Status { get; set; } = OrderStatus.Pending;
     }
 }
