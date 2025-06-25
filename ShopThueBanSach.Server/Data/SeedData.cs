@@ -11,8 +11,8 @@ namespace ShopThueBanSach.Server.Data
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
             string adminUsername = "admin";
-            string adminEmail = "cloneduong001@gmail.com";
-            string adminPassword = "Admin@123";
+            string adminEmail = "haxeclovershop@gmail.com";
+            string adminPassword = "123456sS@";
 
             // Tạo role Admin nếu chưa có
             if (!await roleManager.RoleExistsAsync("Admin"))

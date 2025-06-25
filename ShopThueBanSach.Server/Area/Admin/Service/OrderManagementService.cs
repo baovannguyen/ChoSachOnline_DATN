@@ -1,0 +1,163 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ShopThueBanSach.Server.Area.Admin.Model;
+using ShopThueBanSach.Server.Area.Admin.Service.Interface;
+using ShopThueBanSach.Server.Data;
+using ShopThueBanSach.Server.Entities;
+using ShopThueBanSach.Server.Models;
+
+namespace ShopThueBanSach.Server.Area.Admin.Service
+{
+    public class OrderManagementService : IOrderManagementService
+    {
+        private readonly AppDBContext _context;
+
+        public OrderManagementService(AppDBContext context)
+        {
+            _context = context;
+        }
+
+        // Lấy toàn bộ đơn thuê
+        public async Task<List<RentOrder>> GetAllRentOrdersAsync()
+        {
+            return await _context.RentOrders
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+        //Lấy đơn thuê theo trạng thái (KHÔNG Include User)
+        public async Task<List<RentOrder>> GetOrdersByStatusAsync(OrderStatus status)
+        {
+            return await _context.RentOrders
+                .Where(o => o.Status == status)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+        //Lấy đơn thuê theo ID (giữ lại thông tin Payment nếu cần)
+        public async Task<RentOrder?> GetRentOrderByIdAsync(string orderId)
+        {
+            return await _context.RentOrders
+                .Include(o => o.Payment)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
+        }
+        public async Task<List<RentOrderDetailDto>> GetRentOrderDetailDtosAsync(string orderId)
+        {
+            return await _context.RentOrderDetails
+                .Where(d => d.OrderId == orderId)
+                .Select(d => new RentOrderDetailDto
+                {
+                    Id = d.Id,
+                    BookTitle = d.BookTitle,
+                    BookPrice = d.BookPrice,
+                    Condition = d.Condition,
+                    ReturnCondition = d.ReturnCondition,
+                    RentalFee = d.RentalFee,
+                    TotalFee = d.TotalFee,
+                    ActualRefundAmount = d.ActualRefundAmount,
+                    ActualReturnDate = d.ActualReturnDate
+                })
+                .ToListAsync();
+        }
+        //Lấy chi tiết đơn thuê
+        public async Task<List<RentOrderDetail>> GetRentOrderDetailsAsync(string orderId)
+        {
+            return await _context.RentOrderDetails
+                .Where(d => d.OrderId == orderId)
+                .Include(d => d.RentBookItem)
+                    .ThenInclude(r => r.RentBook)
+                .ToListAsync();
+        }
+
+        // Cập nhật trạng thái đơn
+        public async Task<bool> UpdateRentOrderStatusAsync(string orderId, OrderStatus newStatus)
+        {
+            var order = await _context.RentOrders.FindAsync(orderId);
+            if (order == null) return false;
+
+            // Không cho cập nhật về trạng thái không hợp lệ (nếu cần thêm logic)
+            if (!Enum.IsDefined(typeof(OrderStatus), newStatus))
+                return false;
+
+            order.Status = newStatus;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        //Hoàn tất đơn thuê
+        public async Task<bool> CompleteRentOrderAsync(
+            string orderId,
+            DateTime actualReturnDate,
+            Dictionary<int, int> updatedConditions)
+        {
+            var order = await _context.RentOrders
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            if (order == null) return false;
+
+            var details = await _context.RentOrderDetails
+                .Where(d => d.OrderId == orderId)
+                .Include(d => d.RentBookItem)
+                .ToListAsync();
+
+            if (!details.Any()) return false;
+
+            decimal totalRefund = 0;
+            int lateDays = (actualReturnDate - order.EndDate).Days;
+            decimal lateFee = lateDays > 0 ? lateDays * 2000 : 0;
+
+            foreach (var detail in details)
+            {
+                if (!updatedConditions.TryGetValue(detail.Id, out int returnedCondition))
+                    continue;
+
+                detail.ActualReturnDate = actualReturnDate;
+                detail.ReturnCondition = returnedCondition;
+
+                int lostCondition = detail.Condition - returnedCondition;
+                if (lostCondition < 0) lostCondition = 0;
+
+                decimal damageFee = lostCondition >= 10 ? 3000 : 0;
+
+                decimal refund = detail.BookPrice - lateFee - damageFee;
+                if (refund < 0) refund = 0;
+
+                detail.ActualRefundAmount = refund;
+                totalRefund += refund;
+
+                if (detail.RentBookItem != null)
+                {
+                    detail.RentBookItem.Status = RentBookItemStatus.Available;
+                    detail.RentBookItem.Condition = returnedCondition;
+                }
+            }
+
+            // Gán tổng refund vào đơn hàng
+            order.Status = OrderStatus.Delivered;
+            order.ActualReturnDate = actualReturnDate;
+            order.ActualRefundAmount = totalRefund;
+
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        //Tự động cập nhật đơn quá hạn
+        public async Task<int> AutoUpdateOverdueOrdersAsync()
+        {
+            var today = DateTime.Now;
+
+            var overdueOrders = await _context.RentOrders
+                .Where(o => o.Status != OrderStatus.Delivered
+                         && o.Status != OrderStatus.Canceled
+                         && o.EndDate < today)
+                .ToListAsync();
+
+            foreach (var order in overdueOrders)
+            {
+                order.Status = OrderStatus.Overdue;
+            }
+
+            await _context.SaveChangesAsync();
+            return overdueOrders.Count;
+        }
+    }
+}

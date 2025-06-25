@@ -24,7 +24,7 @@ namespace ShopThueBanSach.Server.Services
         public async Task<IEnumerable<UserDto>> GetAllAsync()
         {
             var users = await _userManager.Users
-                .Where(u => u.Role == null || u.Role == "Khách hàng")
+                .Where(u => u.Role == null || u.Role == "Customer")
                 .ToListAsync();
 
             return users.Select(u => MapToDto(u));
@@ -34,7 +34,7 @@ namespace ShopThueBanSach.Server.Services
         {
             var user = await _userManager.FindByIdAsync(id);
 
-            if (user == null || !(user.Role == null || user.Role == "Khách hàng"))
+            if (user == null || !(user.Role == null || user.Role == "Customer"))
                 return null;
 
             return MapToDto(user);
@@ -43,7 +43,7 @@ namespace ShopThueBanSach.Server.Services
         public async Task<bool> UpdateAsync(UpdateUserDto dto)
         {
             var user = await _userManager.FindByIdAsync(dto.Id);
-            if (user == null || !(user.Role == null || user.Role == "Khách hàng" || user.Role == "Staff"))
+            if (user == null || !(user.Role == null || user.Role == "Customer" || user.Role == "Staff"))
                 return false;
 
             var oldRole = user.Role;
@@ -106,7 +106,7 @@ namespace ShopThueBanSach.Server.Services
         public async Task<bool> DeleteAsync(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
-            if (user == null || !(user.Role == null || user.Role == "Khách hàng"))
+            if (user == null || !(user.Role == null || user.Role == "Customer"))
                 return false;
 
             var result = await _userManager.DeleteAsync(user);
@@ -127,7 +127,7 @@ namespace ShopThueBanSach.Server.Services
         public async Task<bool> UpdateCustomerAsync(UpdateCustomerDto dto)
         {
             var user = await _userManager.FindByIdAsync(dto.Id);
-            if (user == null || !(user.Role == null || user.Role == "Khách hàng"))
+            if (user == null || !(user.Role == null || user.Role == "Customer"))
                 return false;
 
             if (dto.Address != null) user.Address = dto.Address;
