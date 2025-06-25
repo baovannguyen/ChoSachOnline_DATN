@@ -42,7 +42,7 @@ namespace ShopThueBanSach.Server.Services
                 Address = dto.Address,
                 DateOfBirth = (DateTime)dto.DateOfBirth!,
                 EmailConfirmed = false,
-                Role = "Khách hàng" // GÁN ROLE MẶC ĐỊNH
+                Role = "Customer" // GÁN ROLE MẶC ĐỊNH
             };
 
             var result = await _userManager.CreateAsync(user, dto.Password);
@@ -68,7 +68,7 @@ namespace ShopThueBanSach.Server.Services
     <p><i>Lưu ý: Mã xác nhận này sẽ hết hạn sau 10 phút.</i></p>
     <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
     <hr />
-    <p style='font-size: 14px; color: #999;'>Trân trọng,<br/>Đội ngũ hỗ trợ khách hàng</p>
+    <p style='font-size: 14px; color: #999;'>Trân trọng,<br/>Đội ngũ hỗ trợ Customer</p>
 </div>");
 
 
@@ -311,7 +311,7 @@ namespace ShopThueBanSach.Server.Services
     <p><i>Lưu ý: Mã xác nhận này sẽ hết hạn sau 10 phút.</i></p>
     <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
     <hr />
-    <p style='font-size: 14px; color: #999;'>Trân trọng,<br/>Đội ngũ hỗ trợ khách hàng</p>
+    <p style='font-size: 14px; color: #999;'>Trân trọng,<br/>Đội ngũ hỗ trợ Customer</p>
 </div>");
 
 

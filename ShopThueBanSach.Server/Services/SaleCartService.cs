@@ -58,7 +58,7 @@ namespace ShopThueBanSach.Server.Services
                 {
                     ProductId = product.SaleBookId,
                     ProductName = product.Title,
-                    UnitPrice = product.Price,
+                    UnitPrice = product.FinalPrice,
                     Quantity = quantity
                 });
             }
