@@ -7,10 +7,10 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<List<SaleBookDto>> GetAllAsync();
         Task<SaleBookDto?> GetByIdAsync(string id);
         Task<string> CreateAsync(CreateSaleBookDto dto);
-        Task<bool> UpdateAsync(string id, UpdateSaleBookDto dto);  // Đổi từ SaleBookDto sang UpdateSaleBookDto
-
+        Task<bool> UpdateAsync(string id, UpdateSaleBookDto dto);
         Task<bool> DeleteAsync(string id);
         Task<bool> SetVisibilityAsync(string id, bool isHidden);
         Task<bool> CheckTitleExistsAsync(string title, string? excludeId = null);
+        Task<decimal> CalculateFinalPriceAsync(decimal basePrice, string? promotionId);
     }
 }

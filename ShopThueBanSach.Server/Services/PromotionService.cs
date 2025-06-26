@@ -96,11 +96,16 @@ namespace ShopThueBanSach.Server.Services
             foreach (var book in books)
             {
                 book.PromotionId = promotion.PromotionId;
+
+                // Bắt buộc đánh dấu là đã thay đổi để lưu
+                _context.Entry(book).Property(b => b.PromotionId).IsModified = true;
             }
 
-            await _context.SaveChangesAsync();
-            return true;
+            // Lưu vào database
+            var affectedRows = await _context.SaveChangesAsync();
+            return affectedRows > 0;
         }
+
         public async Task<bool> CheckNameExistsAsync(string promotionName, string? excludeId = null)
         {
             var query = _context.Promotions

@@ -26,6 +26,7 @@ namespace ShopThueBanSach.Server.Controllers
             _staffService = staffService;
             _httpContextAccessor = httpContextAccessor;
         }
+
         private async Task<string?> GetCurrentStaffIdAsync()
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -42,6 +43,7 @@ namespace ShopThueBanSach.Server.Controllers
                 await _notificationService.CreateNotificationAsync(staffId, description);
             }
         }
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -57,14 +59,16 @@ namespace ShopThueBanSach.Server.Controllers
             return Ok(result);
         }
 
-
-        [HttpPost]
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] CreateSaleBookDto dto)
-
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            if (dto.PromotionId?.Trim().ToLower() == "string")
+            {
+                dto.PromotionId = null;
+            }
 
             if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
                 return BadRequest(new { message = "Tiêu đề và nhà xuất bản không được để là 'string'." });
@@ -72,21 +76,30 @@ namespace ShopThueBanSach.Server.Controllers
             if (await _service.CheckTitleExistsAsync(dto.Title))
                 return BadRequest(new { message = "Tiêu đề sách đã tồn tại." });
 
-            var id = await _service.CreateAsync(dto);
-            await CreateNotificationIfValidAsync($"Thêm sách bán: {dto.Title}");
+            try
+            {
+                var id = await _service.CreateAsync(dto);
+                await CreateNotificationIfValidAsync($"Thêm sách bán: {dto.Title}");
 
-            var result = await _service.GetByIdAsync(id);
-            return CreatedAtAction(nameof(GetById), new { id }, result);
+                var result = await _service.GetByIdAsync(id);
+                return CreatedAtAction(nameof(GetById), new { id }, result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
-
-
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromForm] UpdateSaleBookDto dto)
-
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            if (dto.PromotionId?.Trim().ToLower() == "string")
+            {
+                dto.PromotionId = null;
+            }
 
             if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
                 return BadRequest(new { message = "Tiêu đề và nhà xuất bản không được để là 'string'." });
@@ -94,13 +107,19 @@ namespace ShopThueBanSach.Server.Controllers
             if (await _service.CheckTitleExistsAsync(dto.Title, id))
                 return BadRequest(new { message = "Tiêu đề sách đã tồn tại." });
 
-            var success = await _service.UpdateAsync(id, dto);
-            if (success)
-                await CreateNotificationIfValidAsync($"Cập nhật sách bán: {dto.Title}");
+            try
+            {
+                var success = await _service.UpdateAsync(id, dto);
+                if (success)
+                    await CreateNotificationIfValidAsync($"Cập nhật sách bán: {dto.Title}");
 
-            return success ? Ok() : NotFound();
+                return success ? Ok() : NotFound();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
