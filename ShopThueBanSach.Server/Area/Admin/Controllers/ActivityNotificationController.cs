@@ -81,15 +81,7 @@ namespace ShopThueBanSach.Server.Controllers
 
             return Ok(notifications);
         }
-        [HttpPost("test-notify")]
-        public async Task<IActionResult> TestNotification([FromQuery] string staffId, [FromQuery] string message)
-        {
-            if (string.IsNullOrWhiteSpace(staffId) || string.IsNullOrWhiteSpace(message))
-                return BadRequest("Thiếu staffId hoặc message");
-
-            await _notificationService.CreateNotificationAsync(staffId, message);
-            return Ok(new { success = true, staffId, message });
-        }
+      
 
 
     }

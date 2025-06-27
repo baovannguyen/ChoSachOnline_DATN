@@ -101,6 +101,7 @@ namespace ShopThueBanSach.Server
             builder.Services.AddScoped<IMoMoCallbackService, MoMoCallbackService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddScoped<IFavoriteRentBookService, FavoriteRentBookService>();
+            builder.Services.AddScoped<ICommentService, CommentService>();
 
             builder.Services.AddScoped<ISaleCartService, SaleCartService>();
             builder.Services.AddScoped<ISaleOrderService, SaleOrderService>();

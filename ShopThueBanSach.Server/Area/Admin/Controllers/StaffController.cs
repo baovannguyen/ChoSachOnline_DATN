@@ -27,13 +27,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             return Ok(staffUsers);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var staffs = await _staffService.GetAllAsync();      // đã lọc Role = "Staff"
-            return Ok(staffs);
-        }
-
+      
         // GET: api/Staff/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(string id)
