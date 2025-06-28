@@ -34,18 +34,22 @@ namespace ShopThueBanSach.Server.Controllers
 
         // PUT api/usermanager
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(UpdateUserDto dto)
+        public async Task<IActionResult> Update(string id, [FromForm] UpdateUserDto dto) // 🆕 [FromForm]
         {
-            var success = await _userService.UpdateAsync(dto);
+            var success = await _userService.UpdateAsync(id, dto);
             return success ? Ok() : NotFound();
         }
+
+
         // PUT api/usermanager/customer
-        [HttpPut("customer")]
-        public async Task<IActionResult> UpdateCustomer([FromBody] UpdateCustomerDto dto)
+        [HttpPut("customer/{id}")]
+        public async Task<IActionResult> UpdateCustomer(string id, [FromForm] UpdateCustomerDto dto) // 🆕 [FromForm]
         {
-            var success = await _userService.UpdateCustomerAsync(dto);
+            var success = await _userService.UpdateCustomerAsync(id, dto);
             return success ? Ok() : NotFound();
         }
+
+
 
 
         // DELETE api/usermanager/{id}

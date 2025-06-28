@@ -7,9 +7,11 @@ namespace ShopThueBanSach.Server.Services.Interfaces
     {
         Task<IEnumerable<UserDto>> GetAllAsync();
         Task<UserDto?> GetByIdAsync(string id);
-        Task<bool> UpdateAsync(UpdateUserDto dto);
+        Task<bool> UpdateAsync(string id, UpdateUserDto dto);
+
         Task<bool> DeleteAsync(string id);
-        Task<bool> UpdateCustomerAsync(UpdateCustomerDto dto);
+        Task<bool> UpdateCustomerAsync(string id, UpdateCustomerDto dto);
+
 
     }
 }
