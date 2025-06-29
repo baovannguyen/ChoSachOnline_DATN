@@ -36,7 +36,7 @@ namespace ShopThueBanSach.Server.Models.BooksModel.SaleBooks
         [MinLength(1)]
         public List<string> CategoryIds { get; set; }
         // ✅ Thêm dòng này để cho phép thêm khuyến mãi (hoặc bỏ qua nếu không có)
-        public string? PromotionId { get; set; }
+        public List<string>? PromotionIds { get; set; } = new();
     }
 
 }

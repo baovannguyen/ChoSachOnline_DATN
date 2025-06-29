@@ -20,26 +20,30 @@ namespace ShopThueBanSach.Server.Services
             var favorites = await _context.FavoriteBooks
                 .Where(f => f.UserId == userId)
                 .Include(f => f.SaleBook)
-                    .ThenInclude(sb => sb.Promotion)
+                    .ThenInclude(sb => sb.PromotionSaleBooks)
+                        .ThenInclude(psb => psb.Promotion)
                 .Include(f => f.User)
                 .ToListAsync();
 
-            return favorites.Select(f => new FavoriteBookDto
+            return favorites.Select(f =>
             {
-                SaleBookId = f.SaleBook.SaleBookId,
-                Title = f.SaleBook.Title,
-                ImageUrl = f.SaleBook.ImageUrl,
-                Price = f.SaleBook.Price,
-                FinalPrice = f.SaleBook.Promotion != null
-                    ? f.SaleBook.Price * (1 - (decimal)(f.SaleBook.Promotion.DiscountPercentage / 100))
-                    : f.SaleBook.Price,
-                PromotionName = f.SaleBook.Promotion?.PromotionName,
-                DiscountPercentage = f.SaleBook.Promotion?.DiscountPercentage,
-                UserName = f.User.UserName
+                var promotion = f.SaleBook.PromotionSaleBooks.FirstOrDefault()?.Promotion;
+
+                return new FavoriteBookDto
+                {
+                    SaleBookId = f.SaleBook.SaleBookId,
+                    Title = f.SaleBook.Title,
+                    ImageUrl = f.SaleBook.ImageUrl,
+                    Price = f.SaleBook.Price,
+                    FinalPrice = promotion != null
+                        ? f.SaleBook.Price * (1 - (decimal)(promotion.DiscountPercentage / 100))
+                        : f.SaleBook.Price,
+                    PromotionName = promotion?.PromotionName,
+                    DiscountPercentage = promotion?.DiscountPercentage,
+                    UserName = f.User.UserName
+                };
             }).ToList();
         }
-
-
 
 
         public async Task<bool> AddFavoriteBookAsync(string userId, string saleBookId)

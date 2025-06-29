@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Models.BooksModel;
+using ShopThueBanSach.Server.Models.BooksModel.Promotion;
 using ShopThueBanSach.Server.Services.Interfaces;
 
 namespace ShopThueBanSach.Server.Controllers
@@ -42,9 +43,8 @@ namespace ShopThueBanSach.Server.Controllers
                 return BadRequest(new { message = "Tên khuyến mãi đã tồn tại." });
 
             var result = await _service.CreatePromotionAsync(model);
-            return result ? Ok() : BadRequest();
+            return result ? Ok() : BadRequest(new { message = "Tạo khuyến mãi thất bại." });
         }
-
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] PromotionDTO model)
@@ -63,23 +63,26 @@ namespace ShopThueBanSach.Server.Controllers
                 return BadRequest(new { message = "Tên khuyến mãi đã tồn tại." });
 
             var result = await _service.UpdatePromotionAsync(id, model);
-            return result ? Ok() : NotFound();
+            return result ? Ok() : NotFound(new { message = "Không tìm thấy khuyến mãi cần cập nhật." });
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             var result = await _service.DeletePromotionAsync(id);
-            return result ? Ok() : NotFound();
+            return result ? Ok() : NotFound(new { message = "Không tìm thấy khuyến mãi cần xoá." });
         }
-        [HttpPost("apply")]
-        public async Task<IActionResult> ApplyPromotionToBooks([FromBody] ApplyPromotionDTO dto)
-        {
-            var result = await _service.ApplyPromotionToBooksAsync(dto);
-            return result
-                ? Ok(new { message = "Áp dụng khuyến mãi thành công!" })
-                : BadRequest(new { message = "Không thể áp dụng khuyến mãi." });
-        }
+
+        //[HttpPost("apply")]
+        //public async Task<IActionResult> ApplyPromotionToBooks([FromBody] ApplyPromotionDTO dto)
+        //{
+        //    if (dto == null || string.IsNullOrWhiteSpace(dto.PromotionId) || dto.SaleBookIds == null || !dto.SaleBookIds.Any())
+        //        return BadRequest(new { message = "Vui lòng cung cấp đầy đủ PromotionId và danh sách SaleBookIds." });
+
+        //    var result = await _service.ApplyPromotionToBooksAsync(dto);
+        //    return result
+        //        ? Ok(new { message = "Áp dụng khuyến mãi thành công!" })
+        //        : BadRequest(new { message = "Không thể áp dụng khuyến mãi." });
+        //}
     }
 }

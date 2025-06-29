@@ -55,25 +55,21 @@ namespace ShopThueBanSach.Server.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] AuthorDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateAuthorDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Kiểm tra nếu người dùng nhập "string" cho Name hoặc Description
-            if (dto.Name?.Trim().ToLower() == "string" || dto.Description?.Trim().ToLower() == "string")
-            {
-                return BadRequest(new
-                {
-                    message = "Tên tác giả và mô tả không được để là 'string'. Vui lòng nhập nội dung hợp lệ."
-                });
-            }
+            if (string.IsNullOrWhiteSpace(dto.Name) || dto.Name.Trim().ToLower() == "string")
+                return BadRequest(new { message = "Tên tác giả không hợp lệ." });
+
+            if (await _authorService.CheckNameExistsAsync(dto.Name))
+                return BadRequest(new { message = "Tên tác giả đã tồn tại." });
 
             var created = await _authorService.CreateAsync(dto);
             await CreateNotificationIfValidAsync($"Thêm tác giả: {dto.Name}");
             return Ok(created);
         }
-
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] AuthorDto dto)
         {

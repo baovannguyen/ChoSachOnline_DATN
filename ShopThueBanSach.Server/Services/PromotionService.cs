@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
+using ShopThueBanSach.Server.Entities.Relationships;
 using ShopThueBanSach.Server.Models.BooksModel;
+using ShopThueBanSach.Server.Models.BooksModel.Promotion;
 using ShopThueBanSach.Server.Services.Interfaces;
 
 namespace ShopThueBanSach.Server.Services
@@ -31,18 +33,27 @@ namespace ShopThueBanSach.Server.Services
 
         public async Task<bool> DeletePromotionAsync(string id)
         {
-            var entity = await _context.Promotions.Include(p => p.SaleBooks).FirstOrDefaultAsync(p => p.PromotionId == id);
-            if (entity == null) return false;
+            var promotion = await _context.Promotions
+                .Include(p => p.PromotionSaleBooks)
+                .ThenInclude(psb => psb.SaleBook)
+                .FirstOrDefaultAsync(p => p.PromotionId == id);
 
-            foreach (var book in entity.SaleBooks)
+            if (promotion == null) return false;
+
+            // Reset FinalPrice của các sách
+            foreach (var psb in promotion.PromotionSaleBooks)
             {
-                book.PromotionId = null;
+                psb.SaleBook.FinalPrice = psb.SaleBook.Price; // reset lại
             }
 
-            _context.Promotions.Remove(entity);
+            // Xoá liên kết trung gian
+            _context.PromotionSaleBooks.RemoveRange(promotion.PromotionSaleBooks);
+
+            _context.Promotions.Remove(promotion);
             await _context.SaveChangesAsync();
             return true;
         }
+
 
         public async Task<List<PromotionDTO>> GetAllPromotionsAsync()
         {
@@ -84,23 +95,42 @@ namespace ShopThueBanSach.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
-        public async Task<bool> ApplyPromotionToBooksAsync(ApplyPromotionDTO dto)
-        {
-            var promotion = await _context.Promotions.FindAsync(dto.PromotionId);
-            if (promotion == null) return false;
+        //public async Task<bool> ApplyPromotionToBooksAsync(ApplyPromotionDTO dto)
+        //{
+        //    var promotion = await _context.Promotions
+        //        .Include(p => p.PromotionSaleBooks)
+        //        .ThenInclude(psb => psb.SaleBook)
+        //        .FirstOrDefaultAsync(p => p.PromotionId == dto.PromotionId);
 
-            var books = await _context.SaleBooks
-                .Where(b => dto.SaleBookIds.Contains(b.SaleBookId))
-                .ToListAsync();
+        //    if (promotion == null) return false;
 
-            foreach (var book in books)
-            {
-                book.PromotionId = promotion.PromotionId;
-            }
+        //    // Xoá liên kết cũ
+        //    var oldLinks = _context.PromotionSaleBooks
+        //        .Where(psb => psb.PromotionId == dto.PromotionId);
+        //    _context.PromotionSaleBooks.RemoveRange(oldLinks);
 
-            await _context.SaveChangesAsync();
-            return true;
-        }
+        //    var books = await _context.SaleBooks
+        //        .Where(b => dto.SaleBookIds.Contains(b.SaleBookId))
+        //        .ToListAsync();
+
+        //    foreach (var book in books)
+        //    {
+        //        _context.PromotionSaleBooks.Add(new PromotionSaleBook
+        //        {
+        //            PromotionId = dto.PromotionId,
+        //            SaleBookId = book.SaleBookId
+        //        });
+
+        //        // Cập nhật FinalPrice (ép kiểu rõ ràng giữa decimal - double)
+        //        book.FinalPrice = book.Price * (decimal)((100 - promotion.DiscountPercentage) / 100.0);
+        //    }
+
+        //    await _context.SaveChangesAsync();
+        //    return true;
+        //}
+
+
+
         public async Task<bool> CheckNameExistsAsync(string promotionName, string? excludeId = null)
         {
             var query = _context.Promotions
