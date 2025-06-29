@@ -12,8 +12,8 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250627053159_datn")]
-    partial class datn
+    [Migration("20250629144448_Update_Promotion_SaleBook_ManyToMany")]
+    partial class Update_Promotion_SaleBook_ManyToMany
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -488,6 +488,21 @@ namespace ShopThueBanSach.Server.Migrations
                     b.ToTable("CategorySaleBook");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.PromotionSaleBook", b =>
+                {
+                    b.Property<string>("PromotionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SaleBookId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("PromotionId", "SaleBookId");
+
+                    b.HasIndex("SaleBookId");
+
+                    b.ToTable("PromotionSaleBooks");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBook", b =>
                 {
                     b.Property<string>("RentBookId")
@@ -685,9 +700,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("PromotionId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("Publisher")
                         .HasColumnType("nvarchar(max)");
 
@@ -705,8 +717,6 @@ namespace ShopThueBanSach.Server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("SaleBookId");
-
-                    b.HasIndex("PromotionId");
 
                     b.ToTable("SaleBooks");
                 });
@@ -1137,6 +1147,25 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("SaleBook");
                 });
 
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.Relationships.PromotionSaleBook", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.Promotion", "Promotion")
+                        .WithMany("PromotionSaleBooks")
+                        .HasForeignKey("PromotionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopThueBanSach.Server.Entities.SaleBook", "SaleBook")
+                        .WithMany("PromotionSaleBooks")
+                        .HasForeignKey("SaleBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Promotion");
+
+                    b.Navigation("SaleBook");
+                });
+
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBookItem", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.RentBook", "RentBook")
@@ -1176,16 +1205,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("RentBookItem");
-                });
-
-            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
-                {
-                    b.HasOne("ShopThueBanSach.Server.Entities.Promotion", "Promotion")
-                        .WithMany("SaleBooks")
-                        .HasForeignKey("PromotionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Promotion");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrderDetail", b =>
@@ -1235,7 +1254,7 @@ namespace ShopThueBanSach.Server.Migrations
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Promotion", b =>
                 {
-                    b.Navigation("SaleBooks");
+                    b.Navigation("PromotionSaleBooks");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentBook", b =>
@@ -1261,6 +1280,8 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("CategorySaleBooks");
 
                     b.Navigation("FavoriteBooks");
+
+                    b.Navigation("PromotionSaleBooks");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrder", b =>

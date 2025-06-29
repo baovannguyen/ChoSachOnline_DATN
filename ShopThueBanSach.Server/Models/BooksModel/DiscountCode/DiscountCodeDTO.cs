@@ -13,5 +13,7 @@
 
         public int RequiredPoints { get; set; } // nếu cần cho chức năng đổi
         public double DiscountValue { get; set; }
+        // ✅ Thêm danh sách mã Voucher
+        public List<string> VoucherCodes { get; set; } = new();
     }
 }

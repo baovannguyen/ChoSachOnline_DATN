@@ -45,6 +45,7 @@ namespace ShopThueBanSach.Server.Services
         public async Task<List<DiscountCodeDTO>> GetAllAsync()
         {
             return await _context.DiscountCodes
+                .Include(dc => dc.Vouchers)
                 .Select(d => new DiscountCodeDTO
                 {
                     DiscountCodeId = d.DiscountCodeId,
@@ -54,13 +55,18 @@ namespace ShopThueBanSach.Server.Services
                     EndDate = d.EndDate,
                     AvailableQuantity = d.AvailableQuantity,
                     RequiredPoints = d.RequiredPoints,
-                    DiscountValue = d.DiscountValue
+                    DiscountValue = d.DiscountValue,
+                    VoucherCodes = d.Vouchers.Select(v => v.Code).ToList() // ✅ Thêm dòng này
                 }).ToListAsync();
         }
 
+
         public async Task<DiscountCodeDTO?> GetByIdAsync(string id)
         {
-            var d = await _context.DiscountCodes.FindAsync(id);
+            var d = await _context.DiscountCodes
+                .Include(dc => dc.Vouchers)
+                .FirstOrDefaultAsync(dc => dc.DiscountCodeId == id);
+
             if (d == null) return null;
 
             return new DiscountCodeDTO
@@ -72,9 +78,11 @@ namespace ShopThueBanSach.Server.Services
                 EndDate = d.EndDate,
                 AvailableQuantity = d.AvailableQuantity,
                 RequiredPoints = d.RequiredPoints,
-                DiscountValue = d.DiscountValue
+                DiscountValue = d.DiscountValue,
+                VoucherCodes = d.Vouchers.Select(v => v.Code).ToList() // ✅ Thêm dòng này
             };
         }
+
 
         public async Task<bool> UpdateAsync(string id, UpdateDiscountCodeDto model)
         {
@@ -109,6 +117,7 @@ namespace ShopThueBanSach.Server.Services
         {
             var today = DateTime.UtcNow;
             return await _context.DiscountCodes
+                .Include(dc => dc.Vouchers)
                 .Where(dc => dc.AvailableQuantity > 0 && dc.StartDate <= today && dc.EndDate >= today)
                 .Select(d => new DiscountCodeDTO
                 {
@@ -119,9 +128,11 @@ namespace ShopThueBanSach.Server.Services
                     EndDate = d.EndDate,
                     AvailableQuantity = d.AvailableQuantity,
                     RequiredPoints = d.RequiredPoints,
-                    DiscountValue = d.DiscountValue
+                    DiscountValue = d.DiscountValue,
+                    VoucherCodes = d.Vouchers.Select(v => v.Code).ToList() // ✅ Tuỳ chọn
                 }).ToListAsync();
         }
+
 
     }
 }

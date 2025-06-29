@@ -7,8 +7,9 @@ namespace ShopThueBanSach.Server.Services.Interfaces
     {
         Task<List<AuthorDto>> GetAllAsync();
         Task<AuthorDto?> GetByIdAsync(string id);
-        Task<AuthorDto?> CreateAsync(AuthorDto dto);
+        Task<AuthorDto?> CreateAsync(CreateAuthorDto dto);
         Task<AuthorDto?> UpdateAsync(string id, AuthorDto dto);
         Task<bool> DeleteAsync(string id);
+        Task<bool> CheckNameExistsAsync(string name, string? excludeId = null);
     }
 }

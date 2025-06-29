@@ -23,6 +23,6 @@ namespace ShopThueBanSach.Server.Models.BooksModel.SaleBooks
         public bool IsHidden { get; set; }
         public List<string> AuthorIds { get; set; }
         public List<string> CategoryIds { get; set; }
-        public string? PromotionId { get; set; }
+        public List<string>? PromotionIds { get; set; } // Nhiều promotion có thể null
     }
 }

@@ -27,7 +27,7 @@ namespace ShopThueBanSach.Server.Models.BooksModel.SaleBooks
         public List<string> AuthorIds { get; set; }
         public List<string> CategoryIds { get; set; }
 
-        public string? PromotionId { get; set; }
+        public List<string>? PromotionIds { get; set; } = new();
 
         public IFormFile? ImageFile { get; set; } // ✅ dùng để upload ảnh
     }

@@ -37,6 +37,8 @@ namespace ShopThueBanSach.Server.Data
         public DbSet<Comment> Comments { get; set; }
         public DbSet<SaleOrder> SaleOrders { get; set; }
         public DbSet<SaleOrderDetail> SaleOrderDetails { get; set; }
+        public DbSet<PromotionSaleBook> PromotionSaleBooks { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -78,13 +80,22 @@ namespace ShopThueBanSach.Server.Data
     .HasForeignKey(n => n.StaffId)
     .OnDelete(DeleteBehavior.Cascade); // hoặc .Restrict nếu bạn muốn giữ thông báo khi xóa staff
 
+            //THÊM quan hệ nhiều-nhiều mới
+            builder.Entity<PromotionSaleBook>().HasKey(x => new { x.PromotionId, x.SaleBookId });
 
-            // SaleBook - Promotion(1 promotion to many books)
-            builder.Entity<SaleBook>()
-                .HasOne(s => s.Promotion)
-                .WithMany(p => p.SaleBooks)
-                .HasForeignKey(s => s.PromotionId)
-                .OnDelete(DeleteBehavior.SetNull);
+            builder.Entity<PromotionSaleBook>()
+                .HasOne(x => x.Promotion)
+                .WithMany(p => p.PromotionSaleBooks)
+                .HasForeignKey(x => x.PromotionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PromotionSaleBook>()
+                .HasOne(x => x.SaleBook)
+                .WithMany(s => s.PromotionSaleBooks)
+                .HasForeignKey(x => x.SaleBookId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
             //Cấu hình quan hệ Voucher
 
             builder.Entity<Voucher>()
