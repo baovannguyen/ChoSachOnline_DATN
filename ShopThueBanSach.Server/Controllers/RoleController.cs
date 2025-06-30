@@ -1,4 +1,4 @@
-﻿/*using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Services.Interfaces;
 
@@ -54,4 +54,3 @@ namespace ShopThueBanSach.Server.Controllers
         }
     }
 }
-*/

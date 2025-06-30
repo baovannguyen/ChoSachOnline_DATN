@@ -25,7 +25,8 @@ namespace ShopThueBanSach.Server.Services
                     RentBookId = x.RentBookId,
                     RentBookTitle = x.RentBook != null ? x.RentBook.Title : null,
                     Status = x.Status,
-                    Condition = x.Condition,
+					StatusDescription = x.StatusDescription,
+					Condition = x.Condition,
                     IsHidden = x.IsHidden
                 })
                 .ToListAsync();
@@ -45,7 +46,8 @@ namespace ShopThueBanSach.Server.Services
                 RentBookId = item.RentBookId,
                 RentBookTitle = item.RentBook?.Title,
                 Status = item.Status,
-                Condition = item.Condition,
+				StatusDescription = item.StatusDescription,
+				Condition = item.Condition,
                 IsHidden = item.IsHidden
             };
         }
@@ -69,7 +71,8 @@ namespace ShopThueBanSach.Server.Services
                 RentBookId = dto.RentBookId,
                 Condition = dto.Condition,
                 Status = RentBookItemStatus.Available,
-                IsHidden = dto.IsHidden
+				StatusDescription = dto.StatusDescription,
+				IsHidden = dto.IsHidden
             };
 
             _context.RentBookItems.Add(entity);
@@ -88,7 +91,8 @@ namespace ShopThueBanSach.Server.Services
 
             entity.RentBookId = dto.RentBookId;
             entity.Status = dto.Status;
-            entity.Condition = dto.Condition;
+			entity.StatusDescription = dto.StatusDescription;
+			entity.Condition = dto.Condition;
             entity.IsHidden = dto.Condition >= 80;
 
             await _context.SaveChangesAsync();

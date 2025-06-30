@@ -4,6 +4,7 @@ using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Models.BooksModel.SaleBooks;
+using Microsoft.JSInterop.Infrastructure;
 
 namespace ShopThueBanSach.Server.Services
 {
@@ -143,33 +144,41 @@ namespace ShopThueBanSach.Server.Services
 
             _context.SaleBooks.Add(saleBook);
 
-            // Thêm promotions nếu có
-            if (dto.PromotionIds != null && dto.PromotionIds.Any())
-            {
-                var validPromotions = await _context.Promotions
-                    .Where(p => dto.PromotionIds.Contains(p.PromotionId) &&
-                                p.StartDate <= DateTime.UtcNow &&
-                                p.EndDate >= DateTime.UtcNow)
-                    .ToListAsync();
+			// Xử lý promotions nếu có
+			if (dto.PromotionIds != null && dto.PromotionIds.Any())
+			{
+				var validPromotions = await _context.Promotions
+					.Where(p => dto.PromotionIds.Contains(p.PromotionId) &&
+								p.StartDate <= DateTime.UtcNow &&
+								p.EndDate >= DateTime.UtcNow)
+					.ToListAsync();
 
-                foreach (var promo in validPromotions)
-                {
-                    _context.PromotionSaleBooks.Add(new PromotionSaleBook
-                    {
-                        PromotionId = promo.PromotionId,
-                        SaleBookId = saleBook.SaleBookId
-                    });
-                }
+				if (validPromotions.Any())
+				{
+					foreach (var promo in validPromotions)
+					{
+						_context.PromotionSaleBooks.Add(new PromotionSaleBook
+						{
+							PromotionId = promo.PromotionId,
+							SaleBookId = saleBook.SaleBookId
+						});
+					}
 
-                var maxDiscount = validPromotions.Max(p => p.DiscountPercentage);
-                saleBook.FinalPrice = saleBook.Price * (1 - ((decimal)maxDiscount / 100));
-            }
-            else
-            {
-                saleBook.FinalPrice = saleBook.Price;
-            }
-
-            await _context.SaveChangesAsync();
+					var maxDiscount = validPromotions.Max(p => p.DiscountPercentage);
+					saleBook.FinalPrice = saleBook.Price * (1 - ((decimal)maxDiscount / 100));
+				}
+				else
+				{
+					// Không có promotion hợp lệ => giữ nguyên giá
+					saleBook.FinalPrice = saleBook.Price;
+				}
+			}
+			else
+			{
+				// Không nhập promotion => giữ nguyên giá
+				saleBook.FinalPrice = saleBook.Price;
+			}
+			await _context.SaveChangesAsync();
             return saleBook.SaleBookId;
         }
 
@@ -192,8 +201,9 @@ namespace ShopThueBanSach.Server.Services
             saleBook.Price = dto.Price;
             saleBook.Quantity = dto.Quantity;
             saleBook.IsHidden = dto.IsHidden;
+          
 
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+			if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
                 var uploadsFolder = Path.Combine(_env.WebRootPath, "Images", "SaleBooks");
                 if (!Directory.Exists(uploadsFolder))
@@ -214,36 +224,48 @@ namespace ShopThueBanSach.Server.Services
                 saleBook.ImageUrl = $"/Images/SaleBooks/{uniqueFileName}";
             }
 
-            // Cập nhật Promotions
-            _context.PromotionSaleBooks.RemoveRange(saleBook.PromotionSaleBooks);
+			// Cập nhật Promotions
+			_context.PromotionSaleBooks.RemoveRange(saleBook.PromotionSaleBooks);
 
-            if (dto.PromotionIds != null && dto.PromotionIds.Any())
-            {
-                var validPromotions = await _context.Promotions
-                    .Where(p => dto.PromotionIds.Contains(p.PromotionId) &&
-                                p.StartDate <= DateTime.UtcNow &&
-                                p.EndDate >= DateTime.UtcNow)
-                    .ToListAsync();
+			// Lọc bỏ các PromotionId không hợp lệ như "string", null, rỗng
+			var cleanPromotionIds = dto.PromotionIds?
+				.Where(id => !string.IsNullOrWhiteSpace(id) && id != "string")
+				.ToList();
 
-                foreach (var promo in validPromotions)
-                {
-                    _context.PromotionSaleBooks.Add(new PromotionSaleBook
-                    {
-                        PromotionId = promo.PromotionId,
-                        SaleBookId = saleBook.SaleBookId
-                    });
-                }
+			if (cleanPromotionIds != null && cleanPromotionIds.Any())
+			{
+				var validPromotions = await _context.Promotions
+					.Where(p => cleanPromotionIds.Contains(p.PromotionId) &&
+								p.StartDate <= DateTime.UtcNow &&
+								p.EndDate >= DateTime.UtcNow)
+					.ToListAsync();
 
-                var maxDiscount = validPromotions.Max(p => p.DiscountPercentage);
-                saleBook.FinalPrice = saleBook.Price * (1 - ((decimal)maxDiscount / 100));
-            }
-            else
-            {
-                saleBook.FinalPrice = saleBook.Price;
-            }
+				if (validPromotions.Any())
+				{
+					foreach (var promo in validPromotions)
+					{
+						_context.PromotionSaleBooks.Add(new PromotionSaleBook
+						{
+							PromotionId = promo.PromotionId,
+							SaleBookId = saleBook.SaleBookId
+						});
+					}
 
-            // Cập nhật Author và Category
-            saleBook.AuthorSaleBooks.Clear();
+					var maxDiscount = validPromotions.Max(p => p.DiscountPercentage);
+					saleBook.FinalPrice = saleBook.Price * (1 - ((decimal)maxDiscount / 100));
+				}
+				else
+				{
+					saleBook.FinalPrice = saleBook.Price;
+				}
+			}
+			else
+			{
+				// Nếu không có promotion hợp lệ => reset FinalPrice về gốc
+				saleBook.FinalPrice = saleBook.Price;
+			}
+			// Cập nhật Author và Category
+			saleBook.AuthorSaleBooks.Clear();
             saleBook.AuthorSaleBooks = dto.AuthorIds
                 .Select(authorId => new AuthorSaleBook { AuthorId = authorId, SaleBookId = id })
                 .ToList();

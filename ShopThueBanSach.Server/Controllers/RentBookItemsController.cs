@@ -34,7 +34,8 @@ namespace ShopThueBanSach.Server.Controllers
                 x.RentBookId,
                 x.RentBookTitle,
                 status = x.Status.ToString(),
-                x.Condition,
+		x.StatusDescription,
+				x.Condition,
                 x.IsHidden
             }));
         }
@@ -67,7 +68,8 @@ namespace ShopThueBanSach.Server.Controllers
                 item.RentBookId,
                 item.RentBookTitle,
                 status = item.Status.ToString(),
-                item.Condition,
+				item.StatusDescription,
+				item.Condition,
                 item.IsHidden
             });
         }

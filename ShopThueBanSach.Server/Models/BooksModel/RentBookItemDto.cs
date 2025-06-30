@@ -14,7 +14,10 @@ namespace ShopThueBanSach.Server.Models.BooksModel
         [Required]
         public RentBookItemStatus Status { get; set; }
 
-        [Range(0, 100, ErrorMessage = "Condition must be between 0 and 100")]
+        [Required]
+        public string StatusDescription { get; set; }
+
+		[Range(0, 100, ErrorMessage = "Condition must be between 0 and 100")]
         public int Condition { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;

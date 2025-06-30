@@ -18,8 +18,10 @@ namespace ShopThueBanSach.Server.Entities
 
         [Required]
         public RentBookItemStatus Status { get; set; } = RentBookItemStatus.Available;
+		[Required]
+		public string StatusDescription { get; set; }
 
-        [Required]
+		[Required]
         [Range(0, 100)]
         public int Condition { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.Now;

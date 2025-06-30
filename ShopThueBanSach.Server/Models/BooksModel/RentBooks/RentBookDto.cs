@@ -12,7 +12,7 @@
         public decimal Price { get; set; }
         public string? ImageUrl { get; set; }
         public int Quantity { get; set; }
-        public string? PromotionId { get; set; }
+    
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public bool IsHidden { get; set; }  // <-- thêm property này

@@ -58,7 +58,7 @@ namespace ShopThueBanSach.Server.Controllers
         }
 
 
-        [HttpPost]
+
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] CreateSaleBookDto dto)
 
@@ -67,7 +67,7 @@ namespace ShopThueBanSach.Server.Controllers
                 return BadRequest(ModelState);
 
             if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
-                return BadRequest(new { message = "Tiêu đề và nhà xuất bản không được để là 'string'." });
+                return BadRequest(new { message = "Tiêu đề và nhà xuất bản không được để là 'trống'." });
 
             if (await _service.CheckTitleExistsAsync(dto.Title))
                 return BadRequest(new { message = "Tiêu đề sách đã tồn tại." });
@@ -89,7 +89,7 @@ namespace ShopThueBanSach.Server.Controllers
                 return BadRequest(ModelState);
 
             if (dto.Title?.Trim().ToLower() == "string" || dto.Publisher?.Trim().ToLower() == "string")
-                return BadRequest(new { message = "Tiêu đề và nhà xuất bản không được để là 'string'." });
+                return BadRequest(new { message = "Tiêu đề và nhà xuất bản không được để là 'trống'." });
 
             if (await _service.CheckTitleExistsAsync(dto.Title, id))
                 return BadRequest(new { message = "Tiêu đề sách đã tồn tại." });

@@ -39,7 +39,7 @@ namespace ShopThueBanSach.Server.Services
                     Price = r.Price,
                     ImageUrl = r.ImageUrl,
                     Quantity = r.Quantity,
-                    PromotionId = null,
+                    
                     IsHidden = r.IsHidden,
                     AuthorIds = r.AuthorRentBooks.Select(ar => ar.AuthorId).ToList(),
                     CategoryIds = r.CategoryRentBooks.Select(cr => cr.CategoryId).ToList()
@@ -67,7 +67,7 @@ namespace ShopThueBanSach.Server.Services
                 Price = r.Price,
                 ImageUrl = r.ImageUrl,
                 Quantity = r.Quantity,
-                PromotionId = null,
+              
                 IsHidden = r.IsHidden,
                 AuthorIds = r.AuthorRentBooks.Select(ar => ar.AuthorId).ToList(),
                 CategoryIds = r.CategoryRentBooks.Select(cr => cr.CategoryId).ToList()
