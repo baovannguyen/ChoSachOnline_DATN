@@ -151,7 +151,17 @@ namespace ShopThueBanSach.Server
                                .AllowAnyMethod()
                                .AllowCredentials(); // Nếu dùng cookie hoặc session
                     });
-            });
+				options.AddPolicy("UserClientApp",
+				   builder =>
+				   {
+					   builder.WithOrigins("http://localhost:8080") // duong dan front-end
+							  .AllowAnyHeader()
+							  .AllowAnyMethod()
+							  .AllowCredentials(); // Nếu dùng cookie hoặc session
+				   });
+
+
+			});
             var app = builder.Build();
 
             app.UseDefaultFiles();
