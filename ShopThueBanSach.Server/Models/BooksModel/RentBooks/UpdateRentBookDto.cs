@@ -17,7 +17,7 @@ namespace ShopThueBanSach.Server.Models.BooksModel.RentBooks
 
         public int Pages { get; set; }
         public decimal Price { get; set; }
-        public int Quantity { get; set; }
+        //public int Quantity { get; set; }
 
         public bool IsHidden { get; set; }
 

@@ -6,110 +6,134 @@ using ShopThueBanSach.Server.Services.Interfaces;
 
 namespace ShopThueBanSach.Server.Services
 {
-    public class RentBookItemService : IRentBookItemService
-    {
-        private readonly AppDBContext _context;
+	public class RentBookItemService : IRentBookItemService
+	{
+		private readonly AppDBContext _context;
 
-        public RentBookItemService(AppDBContext context)
-        {
-            _context = context;
-        }
+		public RentBookItemService(AppDBContext context)
+		{
+			_context = context;
+		}
 
-        public async Task<List<RentBookItemDto>> GetAllAsync()
-        {
-            return await _context.RentBookItems
-                .Include(x => x.RentBook)
-                .Select(x => new RentBookItemDto
-                {
-                    RentBookItemId = x.RentBookItemId,
-                    RentBookId = x.RentBookId,
-                    RentBookTitle = x.RentBook != null ? x.RentBook.Title : null,
-                    Status = x.Status,
+		public async Task<List<RentBookItemDto>> GetAllAsync()
+		{
+			return await _context.RentBookItems
+				.Include(x => x.RentBook)
+				.Select(x => new RentBookItemDto
+				{
+					RentBookItemId = x.RentBookItemId,
+					RentBookId = x.RentBookId,
+					RentBookTitle = x.RentBook != null ? x.RentBook.Title : null,
+					Status = x.Status,
 					StatusDescription = x.StatusDescription,
 					Condition = x.Condition,
-                    IsHidden = x.IsHidden
-                })
-                .ToListAsync();
-        }
+					IsHidden = x.IsHidden
+				})
+				.ToListAsync();
+		}
 
-        public async Task<RentBookItemDto?> GetByIdAsync(string id)
-        {
-            var item = await _context.RentBookItems
-                .Include(x => x.RentBook)
-                .FirstOrDefaultAsync(x => x.RentBookItemId == id);
+		public async Task<RentBookItemDto?> GetByIdAsync(string id)
+		{
+			var item = await _context.RentBookItems
+				.Include(x => x.RentBook)
+				.FirstOrDefaultAsync(x => x.RentBookItemId == id);
 
-            if (item == null) return null;
+			if (item == null) return null;
 
-            return new RentBookItemDto
-            {
-                RentBookItemId = item.RentBookItemId,
-                RentBookId = item.RentBookId,
-                RentBookTitle = item.RentBook?.Title,
-                Status = item.Status,
+			return new RentBookItemDto
+			{
+				RentBookItemId = item.RentBookItemId,
+				RentBookId = item.RentBookId,
+				RentBookTitle = item.RentBook?.Title,
+				Status = item.Status,
 				StatusDescription = item.StatusDescription,
 				Condition = item.Condition,
-                IsHidden = item.IsHidden
-            };
-        }
+				IsHidden = item.IsHidden
+			};
+		}
 
-        public async Task<RentBookItemDto?> CreateAsync(RentBookItemDto dto)
-        {
-            var rentBook = await _context.RentBooks
-                .Include(r => r.RentBookItems)
-                .FirstOrDefaultAsync(r => r.RentBookId == dto.RentBookId);
+		public async Task<RentBookItemDto?> CreateAsync(RentBookItemDto dto)
+		{
+			var rentBook = await _context.RentBooks
+				.FirstOrDefaultAsync(r => r.RentBookId == dto.RentBookId);
 
-            if (rentBook == null)
-                return null;
+			if (rentBook == null)
+				throw new InvalidOperationException("RentBook không tồn tại.");
 
-            // Kiểm tra số lượng sách con đã tạo
-            int currentCount = rentBook.RentBookItems.Count;
-            if (currentCount >= rentBook.Quantity)
-                throw new InvalidOperationException("Số lượng sách thuê đã đạt tối đa.");
-
-            var entity = new RentBookItem
-            {
-                RentBookId = dto.RentBookId,
-                Condition = dto.Condition,
-                Status = RentBookItemStatus.Available,
+			var entity = new RentBookItem
+			{
+				RentBookId = dto.RentBookId,
+				Condition = dto.Condition,
+				Status = RentBookItemStatus.Available,
 				StatusDescription = dto.StatusDescription,
 				IsHidden = dto.IsHidden
-            };
+			};
 
-            _context.RentBookItems.Add(entity);
-            await _context.SaveChangesAsync();
+			_context.RentBookItems.Add(entity);
 
-            dto.RentBookItemId = entity.RentBookItemId;
-            return dto;
-        }
+			// ✅ TĂNG RentBook.Quantity khi thêm mới RentBookItem
+			rentBook.Quantity += 1;
 
+			await _context.SaveChangesAsync();
 
-        public async Task<RentBookItemDto?> UpdateAsync(string id, RentBookItemDto dto)
-        {
-            var entity = await _context.RentBookItems.FindAsync(id);
-            if (entity == null || dto.Condition < 0 || dto.Condition > 100)
-                return null;
+			dto.RentBookItemId = entity.RentBookItemId;
+			dto.RentBookTitle = rentBook.Title;
+			return dto;
+		}
 
-            entity.RentBookId = dto.RentBookId;
-            entity.Status = dto.Status;
+		public async Task<RentBookItemDto?> UpdateAsync(string id, RentBookItemDto dto)
+		{
+			var entity = await _context.RentBookItems
+.Include(rbi => rbi.RentBook)
+				.FirstOrDefaultAsync(x => x.RentBookItemId == id);
+
+			if (entity == null)
+				return null;
+
+			if (entity.RentBookId != dto.RentBookId)
+			{
+				// ✅ Nếu thay đổi RentBookId
+				var oldRentBook = await _context.RentBooks.FirstOrDefaultAsync(r => r.RentBookId == entity.RentBookId);
+				if (oldRentBook != null)
+					oldRentBook.Quantity -= 1;
+
+				var newRentBook = await _context.RentBooks.FirstOrDefaultAsync(r => r.RentBookId == dto.RentBookId);
+				if (newRentBook == null)
+					throw new InvalidOperationException("RentBook mới không tồn tại.");
+
+				newRentBook.Quantity += 1;
+				entity.RentBookId = dto.RentBookId;
+			}
+
+			entity.Status = dto.Status;
 			entity.StatusDescription = dto.StatusDescription;
 			entity.Condition = dto.Condition;
-            entity.IsHidden = dto.Condition >= 80;
+			entity.IsHidden = dto.Condition >= 80;
 
-            await _context.SaveChangesAsync();
+			await _context.SaveChangesAsync();
 
-            return await GetByIdAsync(id);
-        }
+			return await GetByIdAsync(id);
+		}
 
+		public async Task<bool> DeleteAsync(string id)
+		{
+			var entity = await _context.RentBookItems
+				.Include(rbi => rbi.RentBook)
+				.FirstOrDefaultAsync(x => x.RentBookItemId == id);
 
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var entity = await _context.RentBookItems.FindAsync(id);
-            if (entity == null) return false;
+			if (entity == null)
+				return false;
 
-            _context.RentBookItems.Remove(entity);
-            await _context.SaveChangesAsync();
-            return true;
-        }
+			// ✅ GIẢM RentBook.Quantity khi xóa RentBookItem
+			if (entity.RentBook != null)
+			{
+				entity.RentBook.Quantity -= 1;
+			}
 
-    }
+			_context.RentBookItems.Remove(entity);
+			await _context.SaveChangesAsync();
+			return true;
+		}
+	}
+
 }

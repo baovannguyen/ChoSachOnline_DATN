@@ -105,7 +105,7 @@ namespace ShopThueBanSach.Server.Services
                 Size = dto.Size,
                 Pages = dto.Pages,
                 Price = dto.Price,
-                Quantity = dto.Quantity,
+                //Quantity = dto.Quantity,
                 ImageUrl = imageUrl,
                 IsHidden = dto.IsHidden,
                 AuthorRentBooks = dto.AuthorIds.Select(id => new AuthorRentBook { AuthorId = id }).ToList(),
@@ -134,7 +134,7 @@ namespace ShopThueBanSach.Server.Services
             rentBook.Size = dto.Size;
             rentBook.Pages = dto.Pages;
             rentBook.Price = dto.Price;
-            rentBook.Quantity = dto.Quantity;
+            //rentBook.Quantity = dto.Quantity;
             rentBook.IsHidden = dto.IsHidden;
 
             // ✅ Xử lý ảnh nếu có ảnh mới
