@@ -11,8 +11,11 @@ namespace ShopThueBanSach.Server.Entities
         public string OrderId { get; set; }
         [ForeignKey("OrderId")]
         public SaleOrder Order { get; set; }
+        public string SaleBookId { get; set; }  // ✅ đổi tên
 
-        public string ProductId { get; set; }
+        [ForeignKey("SaleBookId")]
+        public SaleBook SaleBook { get; set; }  // ✅ thêm navigation
+
         public string ProductName { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }

@@ -20,6 +20,8 @@ namespace ShopThueBanSach.Server.Area.Admin.Entities
         public string Address { get; set; }
 
         public DateTime? DateOfBirth { get; set; }
+        public string? ImageUser { get; set; } // Đường dẫn ảnh đại diện
+
 
 
     }

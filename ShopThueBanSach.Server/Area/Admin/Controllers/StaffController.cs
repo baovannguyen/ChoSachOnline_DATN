@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Area.Admin.Entities;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
+using ShopThueBanSach.Server.Models.StaffModel;
 
 namespace ShopThueBanSach.Server.Area.Admin.Controllers
 {
@@ -20,14 +21,14 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
         /* ---------- READ ---------- */
         // GET: api/Staff
         // GET: api/Staff/users
-        [HttpGet("users")]
+        [HttpGet]
         public async Task<IActionResult> GetStaffUsers()
         {
             var staffUsers = await _staffService.GetAllStaffUsersAsync(); // IEnumerable<UserDto>
             return Ok(staffUsers);
         }
 
-      
+
         // GET: api/Staff/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(string id)
@@ -51,12 +52,11 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
         /* ---------- UPDATE ---------- */
         // PUT: api/Staff/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] Staff staff)
+        public async Task<IActionResult> Update(string id, [FromForm] StaffDto dto)
         {
-            if (id != staff.StaffId) return BadRequest("Id mismatch");
+            if (id != dto.StaffId) return BadRequest("Id mismatch");
 
-            // Service sẽ trả null nếu staff không tồn tại hoặc Role != "Staff"
-            var updated = await _staffService.UpdateAsync(staff);
+            var updated = await _staffService.UpdateAsync(dto);
             return updated == null ? NotFound() : Ok(updated);
         }
 

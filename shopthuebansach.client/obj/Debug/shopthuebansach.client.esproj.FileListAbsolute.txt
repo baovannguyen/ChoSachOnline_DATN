@@ -12,3 +12,4 @@ D:\DATN\GopSrc2\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.C
 D:\FPT\DATNNNNNNNN\DATN_code\New folder (19)\ChoSachOnline_DATN\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
 C:\Users\Minh Tri\Documents\Tribackend04\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
 D:\FPT\DATNNNNNNNN\DATN_code\New folder (22)\ChoSachOnline_DATN\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache
+C:\Users\win11\source\repos\NewChosach\shopthuebansach.client\obj\Debug\shopthuebansach.client.esproj.CoreCompileInputs.cache

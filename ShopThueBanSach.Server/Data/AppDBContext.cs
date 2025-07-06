@@ -133,7 +133,12 @@ namespace ShopThueBanSach.Server.Data
                 .WithMany(r => r.FavoriteRentBooks)
                 .HasForeignKey(f => f.RentBookId)
                 .OnDelete(DeleteBehavior.Cascade);
-
+            // Cấu hình SaleOrder -> SaleOrderDetail
+            builder.Entity<SaleOrderDetail>()
+        .HasOne(d => d.SaleBook)
+        .WithMany() // hoặc .WithMany(b => b.SaleOrderDetails) nếu bạn có navigation ngược
+        .HasForeignKey(d => d.SaleBookId)
+        .OnDelete(DeleteBehavior.Cascade);
         }
 
 

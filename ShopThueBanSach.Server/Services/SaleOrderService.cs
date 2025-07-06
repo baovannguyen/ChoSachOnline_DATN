@@ -111,7 +111,7 @@ namespace ShopThueBanSach.Server.Services
 
                 orderDetails.Add(new SaleOrderDetail
                 {
-                    ProductId = product.SaleBookId,
+                    SaleBookId = product.SaleBookId,
                     ProductName = product.Title,
                     UnitPrice = product.FinalPrice,
                     Quantity = item.Quantity,
@@ -190,7 +190,7 @@ namespace ShopThueBanSach.Server.Services
             if (!string.IsNullOrEmpty(cartJson))
             {
                 var cart = JsonConvert.DeserializeObject<List<CartItemSale>>(cartJson);
-                var remaining = cart?.Where(x => !result.Details.Any(d => d.ProductId == x.ProductId)).ToList();
+                var remaining = cart?.Where(x => !result.Details.Any(d => d.SaleBookId == x.ProductId)).ToList();
                 session.SetString("SaleCart", JsonConvert.SerializeObject(remaining));
             }
 
@@ -199,7 +199,7 @@ namespace ShopThueBanSach.Server.Services
 
             foreach (var detail in result.Details)
             {
-                var product = await _context.SaleBooks.FirstOrDefaultAsync(p => p.SaleBookId == detail.ProductId);
+                var product = await _context.SaleBooks.FirstOrDefaultAsync(p => p.SaleBookId == detail.SaleBookId);
                 if (product != null)
                 {
                     product.Quantity -= detail.Quantity;

@@ -1,9 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Area.Admin.Model;
-using ShopThueBanSach.Server.Area.Admin.Models;
+
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
+using ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Daily;
+using ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Monthly;
+using ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Yearly;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
+using ShopThueBanSach.Server.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,95 +23,196 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             _context = context;
         }
 
-        // ===== 1. DTO gộp (đủ 4 phần) =====
-        public async Task<BookStatisticsDto> GetBookStatisticsAsync()
-        {
-            var rentBooks = _context.RentBooks.AsNoTracking();
-            var rentBookItems = _context.RentBookItems.AsNoTracking();
-            var saleBooks = _context.SaleBooks.AsNoTracking();
-
-            return await Task.FromResult(BuildStatistics(rentBooks, rentBookItems, saleBooks));
-        }
-
-        // ===== 2. Từng DTO riêng lẻ =====
+        // Tổng quan số lượng và giá trị sách
         public async Task<OverviewStatisticsDto> GetOverviewStatisticsAsync()
-            => (await GetBookStatisticsAsync()).Overview;
-
-        public async Task<DailyStatisticsDto> GetDailyStatisticsAsync()
-            => (await GetBookStatisticsAsync()).Daily;
-
-        public async Task<WeeklyStatisticsDto> GetWeeklyStatisticsAsync()
-            => (await GetBookStatisticsAsync()).Weekly;
-
-        public async Task<MonthlyStatisticsDto> GetMonthlyStatisticsAsync()
-            => (await GetBookStatisticsAsync()).Monthly;
-
-        // ===== PRIVATE: tính toán toàn bộ =====
-        private BookStatisticsDto BuildStatistics(
-            IQueryable<RentBook> rentBooks,
-            IQueryable<RentBookItem> rentBookItems,
-            IQueryable<SaleBook> saleBooks)
         {
-            var now = DateTime.Now;
-            var today = now.Date;
-            var startOfWeek = now.AddDays(-(int)now.DayOfWeek + (int)DayOfWeek.Monday).Date;
-            var startOfMonth = new DateTime(now.Year, now.Month, 1);
+            var saleBooks = await _context.SaleBooks.AsNoTracking().ToListAsync();
 
-            // 1. Tổng quan
-            var overview = new OverviewStatisticsDto
+            return new OverviewStatisticsDto
             {
-                TotalRentBooks = rentBooks.Sum(x => (int?)x.Quantity) ?? 0,
-                TotalSaleBooks = saleBooks.Sum(x => (int?)x.Quantity) ?? 0,
-                TotalRentBookItems = rentBookItems.Count(),
-                AvailableRentBookItems = rentBookItems.Count(x => x.Status == RentBookItemStatus.Available),
-                TotalRentBookValue = rentBooks.Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
-                TotalSaleBookValue = saleBooks.Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
-            };
-
-            // 2. Hôm nay
-            var daily = new DailyStatisticsDto
-            {
-                RentBooksToday = rentBooks.Where(x => x.CreatedDate.Date == today).Sum(x => (int?)x.Quantity) ?? 0,
-                SaleBooksToday = saleBooks.Where(x => x.CreatedDate.Date == today).Sum(x => (int?)x.Quantity) ?? 0,
-                RentBookValueToday = rentBooks.Where(x => x.CreatedDate.Date == today)
-                                              .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
-                SaleBookValueToday = saleBooks.Where(x => x.CreatedDate.Date == today)
-                                              .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
-            };
-
-            // 3. Tuần này
-            var weekly = new WeeklyStatisticsDto
-            {
-                RentBooksThisWeek = rentBooks.Where(x => x.CreatedDate >= startOfWeek)
-                                                 .Sum(x => (int?)x.Quantity) ?? 0,
-                SaleBooksThisWeek = saleBooks.Where(x => x.CreatedDate >= startOfWeek)
-                                                 .Sum(x => (int?)x.Quantity) ?? 0,
-                RentBookValueThisWeek = rentBooks.Where(x => x.CreatedDate >= startOfWeek)
-                                                 .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
-                SaleBookValueThisWeek = saleBooks.Where(x => x.CreatedDate >= startOfWeek)
-                                                 .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
-            };
-
-            // 4. Tháng này
-            var monthly = new MonthlyStatisticsDto
-            {
-                RentBooksThisMonth = rentBooks.Where(x => x.CreatedDate >= startOfMonth)
-                                                  .Sum(x => (int?)x.Quantity) ?? 0,
-                SaleBooksThisMonth = saleBooks.Where(x => x.CreatedDate >= startOfMonth)
-                                                  .Sum(x => (int?)x.Quantity) ?? 0,
-                RentBookValueThisMonth = rentBooks.Where(x => x.CreatedDate >= startOfMonth)
-                                                  .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
-                SaleBookValueThisMonth = saleBooks.Where(x => x.CreatedDate >= startOfMonth)
-                                                  .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
-            };
-
-            return new BookStatisticsDto
-            {
-                Overview = overview,
-                Daily = daily,
-                Weekly = weekly,
-                Monthly = monthly
+                TotalSaleBooks = saleBooks.Sum(x => x.Quantity),
+                TotalSaleBookValue = saleBooks.Sum(x => x.Price * x.Quantity)
             };
         }
+
+        // Tổng đơn hàng và tổng doanh thu Sale
+        public async Task<OrderSummaryDto> GetOrderSummaryAsync()
+        {
+            var saleOrders = _context.SaleOrders
+                                     .AsNoTracking()
+                                     .Where(o => o.Status != OrderStatus.Canceled);
+
+            var rentOrders = _context.RentOrders
+                                     .AsNoTracking()
+                                     .Where(o => o.Status != OrderStatus.Canceled);
+
+            return new OrderSummaryDto
+            {
+                TotalSaleOrders = await saleOrders.CountAsync(),
+                TotalSaleAmount = await saleOrders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0,
+
+                TotalRentOrders = await rentOrders.CountAsync(),
+                TotalRentAmount = await rentOrders.SumAsync(o => (decimal?)o.TotalFee) ?? 0
+            };
+        }
+
+
+        // Sale theo ngày
+        public async Task<DailySaleBookStatisticsDto> GetDailySaleBookStatisticsAsync()
+        {
+            var today = DateTime.Today;
+            var saleOrders = _context.SaleOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Date == today);
+
+            return new DailySaleBookStatisticsDto
+            {
+                OrdersToday = await saleOrders.CountAsync(),
+                TotalValueToday = await saleOrders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0
+            };
+        }
+
+        // Sale theo tháng
+        public async Task<MonthlySaleBookStatisticsDto> GetMonthlySaleBookStatisticsAsync()
+        {
+            var startOfMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var saleOrders = _context.SaleOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate >= startOfMonth);
+
+            return new MonthlySaleBookStatisticsDto
+            {
+                OrdersThisMonth = await saleOrders.CountAsync(),
+                TotalValueThisMonth = await saleOrders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0
+            };
+        }
+
+        // Sale theo năm
+        public async Task<YearlySaleBookStatisticsDto> GetYearlySaleBookStatisticsAsync()
+        {
+            var startOfYear = new DateTime(DateTime.Today.Year, 1, 1);
+            var saleOrders = _context.SaleOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate >= startOfYear);
+
+            return new YearlySaleBookStatisticsDto
+            {
+                OrdersThisYear = await saleOrders.CountAsync(),
+                TotalValueThisYear = await saleOrders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0
+            };
+        }
+        public async Task<List<SaleOrder>> GetSaleOrdersByDateAsync(DateTime date)
+        {
+            return await _context.SaleOrders
+                .Include(o => o.SaleOrderDetails)
+                .ThenInclude(d => d.SaleBook)
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Date == date.Date)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<SaleOrder>> GetSaleOrdersByMonthAsync(int year, int month)
+        {
+            return await _context.SaleOrders
+                .Include(o => o.SaleOrderDetails)
+                .ThenInclude(d => d.SaleBook)
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year &&
+                            o.OrderDate.Month == month)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<SaleOrder>> GetSaleOrdersByYearAsync(int year)
+        {
+            return await _context.SaleOrders
+                .Include(o => o.SaleOrderDetails)
+                .ThenInclude(d => d.SaleBook)
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        public async Task<List<RentOrder>> GetRentOrdersByDateAsync(DateTime date)
+        {
+            return await _context.RentOrders
+                .Include(o => o.RentOrderDetails)
+                .ThenInclude(d => d.RentBookItem)
+                .ThenInclude(item => item.RentBook)
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Date == date.Date)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<RentOrder>> GetRentOrdersByMonthAsync(int year, int month)
+        {
+            return await _context.RentOrders
+                .Include(o => o.RentOrderDetails)
+                .ThenInclude(d => d.RentBookItem)
+                .ThenInclude(item => item.RentBook)
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year &&
+                            o.OrderDate.Month == month)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<RentOrder>> GetRentOrdersByYearAsync(int year)
+        {
+            return await _context.RentOrders
+                .Include(o => o.RentOrderDetails)
+                .ThenInclude(d => d.RentBookItem)
+                .ThenInclude(item => item.RentBook)
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        // Thống kê theo ngày
+        public async Task<DailyRentBookStatisticsDto> GetDailyRentBookStatisticsAsync()
+        {
+            var today = DateTime.Today;
+            var rentOrders = _context.RentOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Date == today);
+
+            return new DailyRentBookStatisticsDto
+            {
+                OrdersToday = await rentOrders.CountAsync(),
+                TotalValueToday = await rentOrders.SumAsync(o => (decimal?)o.TotalFee) ?? 0
+            };
+        }
+
+        // Thống kê theo tháng
+        public async Task<MonthlyRentBookStatisticsDto> GetMonthlyRentBookStatisticsAsync()
+        {
+            var startOfMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var rentOrders = _context.RentOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate >= startOfMonth);
+
+            return new MonthlyRentBookStatisticsDto
+            {
+                OrdersThisMonth = await rentOrders.CountAsync(),
+                TotalValueThisMonth = await rentOrders.SumAsync(o => (decimal?)o.TotalFee) ?? 0
+            };
+        }
+
+        // Thống kê theo năm
+        public async Task<YearlyRentBookStatisticsDto> GetYearlyRentBookStatisticsAsync()
+        {
+            var startOfYear = new DateTime(DateTime.Today.Year, 1, 1);
+            var rentOrders = _context.RentOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate >= startOfYear);
+
+            return new YearlyRentBookStatisticsDto
+            {
+                OrdersThisYear = await rentOrders.CountAsync(),
+                TotalValueThisYear = await rentOrders.SumAsync(o => (decimal?)o.TotalFee) ?? 0
+            };
+        }
+
+
     }
 }

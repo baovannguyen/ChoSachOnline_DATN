@@ -36,5 +36,7 @@ namespace ShopThueBanSach.Server.Entities
         public decimal? ActualRefundAmount { get; set; }
 
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
+        // ✅ Thêm dòng này để EF hiểu mối quan hệ 1-n với RentOrderDetail
+        public ICollection<RentOrderDetail> RentOrderDetails { get; set; } = new List<RentOrderDetail>();
     }
 }
