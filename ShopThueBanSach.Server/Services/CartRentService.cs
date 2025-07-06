@@ -54,7 +54,8 @@ namespace ShopThueBanSach.Server.Services
                 RentBookItemId = item.RentBookItemId,
                 RentBookTitle = item.RentBook.Title,
                 BookPrice = item.RentBook.Price,
-                Condition = item.Condition,
+				imageUrl = item.RentBook.ImageUrl, // Hình ảnh sách, có thể null nếu không có
+				Condition = item.Condition,
                 RentalFee = rentalFee,
                 TotalFee = rentalFee,
                 IsSelected = true

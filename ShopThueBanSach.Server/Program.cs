@@ -27,7 +27,9 @@ namespace ShopThueBanSach.Server
                 options.IdleTimeout = TimeSpan.FromHours(2);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
-            }); // Thêm bộ nhớ đệm cho Session
+				options.Cookie.SameSite = SameSiteMode.None; // ✅ thêm dòng này
+				options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+			}); // Thêm bộ nhớ đệm cho Session
             builder.Services.AddHttpContextAccessor(); // cần để lấy Session
             builder.Services.AddSwaggerGen(c =>
             {
@@ -141,33 +143,23 @@ namespace ShopThueBanSach.Server
                     RoleClaimType = ClaimTypes.Role
                 };
             });
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowClientApp",
-                    builder =>
-                    {
-                        builder.WithOrigins("http://localhost:8080") // duong dan front-end
-                               .AllowAnyHeader()
-                               .AllowAnyMethod()
-                               .AllowCredentials(); // Nếu dùng cookie hoặc session
-                    });
-				options.AddPolicy("UserClientApp",
-				   builder =>
-				   {
-					   builder.WithOrigins("http://localhost:8080") // duong dan front-end
-							  .AllowAnyHeader()
-							  .AllowAnyMethod()
-							  .AllowCredentials(); // Nếu dùng cookie hoặc session
-				   });
-
-
+			builder.Services.AddCors(options =>
+			{
+				options.AddPolicy("AllowFrontend", builder =>
+				{
+					builder.WithOrigins("http://localhost:5173", "http://localhost:8080") // React & Vue dev server
+						   .AllowAnyHeader()
+						   .AllowAnyMethod()
+						   .AllowCredentials();
+				});
 			});
-            var app = builder.Build();
+
+			var app = builder.Build();
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
-            app.UseSession();
-            // Configure the HTTP request pipeline.
+           
+            
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -183,8 +175,9 @@ namespace ShopThueBanSach.Server
                 await SeedData.InitializeAsync(services);
             }
             app.UseHttpsRedirection();
-            app.UseCors("AllowClientApp");
-            app.UseAuthentication();
+			app.UseCors("AllowFrontend");
+			app.UseSession();
+			app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();

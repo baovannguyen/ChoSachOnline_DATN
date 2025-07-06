@@ -58,7 +58,8 @@ namespace ShopThueBanSach.Server.Services
                 {
                     ProductId = product.SaleBookId,
                     ProductName = product.Title,
-                    UnitPrice = product.FinalPrice,
+					ImageUrl = product.ImageUrl, // Hình ảnh sản phẩm, có thể null nếu không có
+					UnitPrice = product.FinalPrice,
                     Quantity = quantity
                 });
             }
