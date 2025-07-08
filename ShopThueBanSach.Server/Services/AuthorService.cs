@@ -53,7 +53,7 @@ namespace ShopThueBanSach.Server.Services
             return await GetByIdAsync(entity.AuthorId);
         }
 
-        public async Task<AuthorDto?> UpdateAsync(string id, AuthorDto dto)
+        public async Task<AuthorDto?> UpdateAsync(string id, AuthorUpdateDto dto)
         {
             var author = await _context.Authors.FindAsync(id);
             if (author == null) return null;

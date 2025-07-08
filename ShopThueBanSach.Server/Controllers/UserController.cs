@@ -24,9 +24,9 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var userId = GetUserId();
-            var profile = await _userService.GetProfileAsync(userId);
-            if (profile == null) return NotFound("Không tìm thấy người dùng");
+
+			var profile = await _userService.GetProfileAsync();
+			if (profile == null) return NotFound("Không tìm thấy người dùng");
             return Ok(profile);
         }
 

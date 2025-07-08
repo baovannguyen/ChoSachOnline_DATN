@@ -4,8 +4,7 @@ namespace ShopThueBanSach.Server.Models.BooksModel.SaleBooks
 {
     public class UpdateSaleBookDto
     {
-        [Required]
-        public string SaleBookId { get; set; }
+      
 
 
         public string Title { get; set; }

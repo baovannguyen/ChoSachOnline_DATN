@@ -12,14 +12,19 @@ namespace ShopThueBanSach.Server.Services
         private readonly IWebHostEnvironment _env = env;
         private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
-        public async Task<UserProfileDto?> GetProfileAsync(string userId)
+        public async Task<UserProfileDto?> GetProfileAsync()
         {
-            var user = await _userManager.FindByIdAsync(userId);
+			var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+			if (string.IsNullOrEmpty(userId)) return null;
+
+			var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return null;
 
             return new UserProfileDto
             {
-                UserName = user.UserName ?? "",
+				UserId = user.Id,
+				UserName = user.UserName ?? "",
                 Email = user.Email ?? "",
                 PhonNumber = user.PhoneNumber,
                 Address = user.Address,

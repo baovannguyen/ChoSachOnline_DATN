@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopThueBanSach.Server.Data;
 
@@ -11,9 +12,11 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250706202510_qeggg")]
+    partial class qeggg
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -227,6 +230,9 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.Property<string>("FullName")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUser")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")
@@ -742,9 +748,6 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Property<decimal>("OriginalTotalAmount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("PaymentMethod")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
 
@@ -778,16 +781,16 @@ namespace ShopThueBanSach.Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
+
+                    b.Property<string>("SaleBookId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("SubTotal")
                         .HasColumnType("decimal(18,2)");
@@ -798,6 +801,8 @@ namespace ShopThueBanSach.Server.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("SaleBookId");
 
                     b.ToTable("SaleOrderDetails");
                 });
@@ -1192,7 +1197,7 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrderDetail", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", "Order")
-                        .WithMany()
+                        .WithMany("RentOrderDetails")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1211,12 +1216,20 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrderDetail", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.SaleOrder", "Order")
-                        .WithMany("Details")
+                        .WithMany("SaleOrderDetails")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ShopThueBanSach.Server.Entities.SaleBook", "SaleBook")
+                        .WithMany()
+                        .HasForeignKey("SaleBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Order");
+
+                    b.Navigation("SaleBook");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.Voucher", b =>
@@ -1272,6 +1285,8 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrder", b =>
                 {
                     b.Navigation("Payment");
+
+                    b.Navigation("RentOrderDetails");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
@@ -1287,7 +1302,7 @@ namespace ShopThueBanSach.Server.Migrations
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrder", b =>
                 {
-                    b.Navigation("Details");
+                    b.Navigation("SaleOrderDetails");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", b =>

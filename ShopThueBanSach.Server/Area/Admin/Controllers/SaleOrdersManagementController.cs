@@ -8,7 +8,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
 {
     [Route("api/admin/saleorders")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+ 
     public class SaleOrdersManagementController : ControllerBase
     {
         private readonly ISaleOrderManagementService _saleOrderService;

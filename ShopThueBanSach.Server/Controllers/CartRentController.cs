@@ -21,7 +21,7 @@ namespace ShopThueBanSach.Server.Controllers
             return Ok(_cartService.GetCart());
         }
 
-        [HttpPost("add")]
+        [HttpPost("addrent")]
         public async Task<IActionResult> AddToCart([FromBody] string rentBookItemId)
         {
             var success = await _cartService.AddToCartAsync(rentBookItemId);
@@ -37,14 +37,14 @@ namespace ShopThueBanSach.Server.Controllers
              return Ok(_cartService.GetCart());
          }
  */
-        [HttpDelete("remove/{bookId}")]
+        [HttpDelete("removerent/{bookId}")]
         public IActionResult Remove(string bookId)
         {
             _cartService.RemoveFromCart(bookId);
             return Ok(_cartService.GetCart());
         }
 
-        [HttpDelete("clear")]
+        [HttpDelete("clearrent")]
         public IActionResult Clear()
         {
             _cartService.ClearCart();

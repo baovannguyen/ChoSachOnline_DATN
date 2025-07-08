@@ -22,7 +22,8 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpPost("create-cash")]
         public async Task<IActionResult> CreateOrderCash([FromBody] SaleOrderRequest request)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			var user = User;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             request.UserId = userId;

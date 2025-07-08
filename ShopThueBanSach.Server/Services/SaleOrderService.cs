@@ -144,8 +144,7 @@ namespace ShopThueBanSach.Server.Services
 
                 var discountPercent = voucher.DiscountCode.DiscountValue;
 
-                if (discountPercent < 0.1 || discountPercent > 1)
-                    return new BadRequestObjectResult("Phần trăm giảm giá không hợp lệ");
+                
 
                 discountAmount = (decimal)totalAmount * (decimal)discountPercent / 100m;
 
@@ -158,7 +157,8 @@ namespace ShopThueBanSach.Server.Services
                 OrderId = Guid.NewGuid().ToString(),
                 UserId = request.UserId,
                 OrderDate = DateTime.Now,
-                OriginalTotalAmount = totalAmount,
+                PaymentMethod = request.PaymentMethod,
+				OriginalTotalAmount = totalAmount,
                 DiscountAmount = discountAmount,
                 TotalAmount = totalAmount - discountAmount,
                 Status = OrderStatus.Pending,

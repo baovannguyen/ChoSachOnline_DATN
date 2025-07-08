@@ -71,7 +71,7 @@ namespace ShopThueBanSach.Server.Controllers
             return Ok(created);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] AuthorDto dto)
+        public async Task<IActionResult> Update(string id, [FromBody] AuthorUpdateDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);

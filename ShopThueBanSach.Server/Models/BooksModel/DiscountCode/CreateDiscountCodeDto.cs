@@ -25,7 +25,7 @@ namespace ShopThueBanSach.Server.Models.BooksModel.DiscountCode
         public int RequiredPoints { get; set; }
 
         [Required(ErrorMessage = "Giá trị giảm là bắt buộc.")]
-        [Range(0.01, 1.0, ErrorMessage = "Giá trị giảm phải từ 1% đến 100%.")]
+        [Range(1, 100, ErrorMessage = "Giá trị giảm phải từ 1% đến 100%.")]
         public double DiscountValue { get; set; }
     }
 }
