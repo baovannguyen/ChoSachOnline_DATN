@@ -1,10 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using ShopThueBanSach.Server.Area.Admin.Model;
-using ShopThueBanSach.Server.Area.Admin.Models;
+using ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Daily;
+using ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Monthly;
+using ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Yearly;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
+using ShopThueBanSach.Server.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,101 +19,315 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
     public class ReportService : IReportService
     {
         private readonly AppDBContext _context;
+        private readonly IMemoryCache _cache;
 
-        public ReportService(AppDBContext context)
+        public ReportService(AppDBContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
-        // ===== 1. DTO gộp (đủ 4 phần) =====
-        public async Task<BookStatisticsDto> GetBookStatisticsAsync()
+        public Task SetDailySaleDateAsync(DateTime date)
         {
-            var rentBooks = _context.RentBooks.AsNoTracking();
-            var rentBookItems = _context.RentBookItems.AsNoTracking();
-            var saleBooks = _context.SaleBooks.AsNoTracking();
+            if (date.Date > DateTime.Today)
+                throw new ArgumentException("Ngày không hợp lệ vui lòng nhập lại");
 
-            return await Task.FromResult(BuildStatistics(rentBooks, rentBookItems, saleBooks));
+            _cache.Set("DailySaleDate", date.Date, TimeSpan.FromDays(1));
+            return Task.CompletedTask;
         }
 
-        // ===== 2. Từng DTO riêng lẻ =====
+        public Task SetDailyRentDateAsync(DateTime date)
+        {
+            if (date.Date > DateTime.Today)
+                throw new ArgumentException("Ngày không hợp lệ vui lòng nhập lại");
+
+            _cache.Set("DailyRentDate", date.Date, TimeSpan.FromDays(1));
+            return Task.CompletedTask;
+        }
+
+        public Task SetMonthlySaleDateAsync(int year, int month)
+        {
+            var now = DateTime.Today;
+            if (year > now.Year || (year == now.Year && month > now.Month))
+                throw new ArgumentException("Tháng hoặc năm không hợp lệ");
+
+            _cache.Set("MonthlySaleDate", (year, month), TimeSpan.FromDays(1));
+            return Task.CompletedTask;
+        }
+
+        public Task SetYearlySaleDateAsync(int year)
+        {
+            if (year > DateTime.Today.Year)
+                throw new ArgumentException("Năm không hợp lệ");
+
+            _cache.Set("YearlySaleDate", year, TimeSpan.FromDays(1));
+            return Task.CompletedTask;
+        }
+
+        public Task SetMonthlyRentDateAsync(int year, int month)
+        {
+            var now = DateTime.Today;
+            if (year > now.Year || (year == now.Year && month > now.Month))
+                throw new ArgumentException("Tháng hoặc năm không hợp lệ");
+
+            _cache.Set("MonthlyRentDate", (year, month), TimeSpan.FromDays(1));
+            return Task.CompletedTask;
+        }
+
+        public Task SetYearlyRentDateAsync(int year)
+        {
+            if (year > DateTime.Today.Year)
+                throw new ArgumentException("Năm không hợp lệ");
+
+            _cache.Set("YearlyRentDate", year, TimeSpan.FromDays(1));
+            return Task.CompletedTask;
+        }
+
         public async Task<OverviewStatisticsDto> GetOverviewStatisticsAsync()
-            => (await GetBookStatisticsAsync()).Overview;
-
-        public async Task<DailyStatisticsDto> GetDailyStatisticsAsync()
-            => (await GetBookStatisticsAsync()).Daily;
-
-        public async Task<WeeklyStatisticsDto> GetWeeklyStatisticsAsync()
-            => (await GetBookStatisticsAsync()).Weekly;
-
-        public async Task<MonthlyStatisticsDto> GetMonthlyStatisticsAsync()
-            => (await GetBookStatisticsAsync()).Monthly;
-
-        // ===== PRIVATE: tính toán toàn bộ =====
-        private BookStatisticsDto BuildStatistics(
-            IQueryable<RentBook> rentBooks,
-            IQueryable<RentBookItem> rentBookItems,
-            IQueryable<SaleBook> saleBooks)
         {
-            var now = DateTime.Now;
-            var today = now.Date;
-            var startOfWeek = now.AddDays(-(int)now.DayOfWeek + (int)DayOfWeek.Monday).Date;
-            var startOfMonth = new DateTime(now.Year, now.Month, 1);
+            var saleBooks = await _context.SaleBooks.AsNoTracking().ToListAsync();
 
-            // 1. Tổng quan
-            var overview = new OverviewStatisticsDto
+            return new OverviewStatisticsDto
             {
-                TotalRentBooks = rentBooks.Sum(x => (int?)x.Quantity) ?? 0,
-                TotalSaleBooks = saleBooks.Sum(x => (int?)x.Quantity) ?? 0,
-                TotalRentBookItems = rentBookItems.Count(),
-                AvailableRentBookItems = rentBookItems.Count(x => x.Status == RentBookItemStatus.Available),
-                TotalRentBookValue = rentBooks.Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
-                TotalSaleBookValue = saleBooks.Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
+                TotalSaleBooks = saleBooks.Sum(x => x.Quantity),
+                TotalSaleBookValue = saleBooks.Sum(x => x.Price * x.Quantity)
             };
+        }
 
-            // 2. Hôm nay
-            var daily = new DailyStatisticsDto
-            {
-                RentBooksToday = rentBooks.Where(x => x.CreatedDate.Date == today).Sum(x => (int?)x.Quantity) ?? 0,
-                SaleBooksToday = saleBooks.Where(x => x.CreatedDate.Date == today).Sum(x => (int?)x.Quantity) ?? 0,
-                RentBookValueToday = rentBooks.Where(x => x.CreatedDate.Date == today)
-                                              .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
-                SaleBookValueToday = saleBooks.Where(x => x.CreatedDate.Date == today)
-                                              .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
-            };
+        public async Task<OrderSummaryDto> GetOrderSummaryAsync()
+        {
+            var saleOrders = _context.SaleOrders.AsNoTracking().Where(o => o.Status != OrderStatus.Canceled);
+            var rentOrders = _context.RentOrders.AsNoTracking().Where(o => o.Status != OrderStatus.Canceled);
 
-            // 3. Tuần này
-            var weekly = new WeeklyStatisticsDto
+            return new OrderSummaryDto
             {
-                RentBooksThisWeek = rentBooks.Where(x => x.CreatedDate >= startOfWeek)
-                                                 .Sum(x => (int?)x.Quantity) ?? 0,
-                SaleBooksThisWeek = saleBooks.Where(x => x.CreatedDate >= startOfWeek)
-                                                 .Sum(x => (int?)x.Quantity) ?? 0,
-                RentBookValueThisWeek = rentBooks.Where(x => x.CreatedDate >= startOfWeek)
-                                                 .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
-                SaleBookValueThisWeek = saleBooks.Where(x => x.CreatedDate >= startOfWeek)
-                                                 .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
+                TotalSaleOrders = await saleOrders.CountAsync(),
+                TotalSaleAmount = await saleOrders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0,
+                TotalRentOrders = await rentOrders.CountAsync(),
+                TotalRentAmount = await rentOrders.SumAsync(o => (decimal?)o.TotalFee) ?? 0
             };
+        }
 
-            // 4. Tháng này
-            var monthly = new MonthlyStatisticsDto
-            {
-                RentBooksThisMonth = rentBooks.Where(x => x.CreatedDate >= startOfMonth)
-                                                  .Sum(x => (int?)x.Quantity) ?? 0,
-                SaleBooksThisMonth = saleBooks.Where(x => x.CreatedDate >= startOfMonth)
-                                                  .Sum(x => (int?)x.Quantity) ?? 0,
-                RentBookValueThisMonth = rentBooks.Where(x => x.CreatedDate >= startOfMonth)
-                                                  .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0,
-                SaleBookValueThisMonth = saleBooks.Where(x => x.CreatedDate >= startOfMonth)
-                                                  .Sum(x => (decimal?)(x.Price * x.Quantity)) ?? 0
-            };
+        public async Task<DailySaleBookStatisticsDto> GetDailySaleBookStatisticsAsync()
+        {
+            var selectedDate = _cache.TryGetValue("DailySaleDate", out DateTime cachedDate)
+                ? cachedDate
+                : DateTime.Today;
 
-            return new BookStatisticsDto
+            var saleOrders = _context.SaleOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Date == selectedDate);
+
+            return new DailySaleBookStatisticsDto
             {
-                Overview = overview,
-                Daily = daily,
-                Weekly = weekly,
-                Monthly = monthly
+                CreatedDate = selectedDate,
+                OrdersToday = await saleOrders.CountAsync(),
+                TotalValueToday = await saleOrders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0
             };
+        }
+
+        public async Task<MonthlySaleBookStatisticsDto> GetMonthlySaleBookStatisticsAsync()
+        {
+            var (year, month) = _cache.TryGetValue("MonthlySaleDate", out ValueTuple<int, int> yAndM)
+                ? yAndM
+                : (DateTime.Today.Year, DateTime.Today.Month);
+
+            var saleOrders = await _context.SaleOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year &&
+                            o.OrderDate.Month == month)
+                .ToListAsync();
+
+            var createdDates = saleOrders
+                .Select(o => o.OrderDate.Date)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+
+            return new MonthlySaleBookStatisticsDto
+            {
+                CreatedDates = createdDates,
+                OrdersThisMonth = saleOrders.Count,
+                TotalValueThisMonth = saleOrders.Sum(o => o.TotalAmount)
+            };
+        }
+
+        public async Task<YearlySaleBookStatisticsDto> GetYearlySaleBookStatisticsAsync()
+        {
+            int year = _cache.TryGetValue("YearlySaleDate", out int cachedYear)
+                ? cachedYear
+                : DateTime.Today.Year;
+
+            var saleOrders = await _context.SaleOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Year == year)
+                .ToListAsync();
+
+            var createdDates = saleOrders
+                .Select(o => o.OrderDate.Date)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+
+            return new YearlySaleBookStatisticsDto
+            {
+                CreatedDates = createdDates,
+                OrdersThisYear = saleOrders.Count,
+                TotalValueThisYear = saleOrders.Sum(o => o.TotalAmount)
+            };
+        }
+
+        public async Task<List<SaleOrder>> GetSaleOrdersByDateAsync(DateTime date)
+        {
+            return await _context.SaleOrders
+                .Include(o => o.SaleOrderDetails)
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Date == date.Date)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<SaleOrder>> GetSaleOrdersByMonthAsync(int year, int month)
+        {
+            var now = DateTime.Today;
+            if (year > now.Year || (year == now.Year && month > now.Month))
+                throw new ArgumentException("Tháng hoặc năm không hợp lẹ. Vui lòng nhập lại");
+
+            return await _context.SaleOrders
+                .Include(o => o.SaleOrderDetails)
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year &&
+                            o.OrderDate.Month == month)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<SaleOrder>> GetSaleOrdersByYearAsync(int year)
+        {
+            if (year > DateTime.Today.Year)
+                throw new ArgumentException("Năm không hợp lệ vui lòng nhập lại");
+
+            return await _context.SaleOrders
+                .Include(o => o.SaleOrderDetails)
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<DailyRentBookStatisticsDto> GetDailyRentBookStatisticsAsync()
+        {
+            var selectedDate = _cache.TryGetValue("DailyRentDate", out DateTime cachedDate)
+                ? cachedDate
+                : DateTime.Today;
+
+            var rentOrders = _context.RentOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Date == selectedDate);
+
+            return new DailyRentBookStatisticsDto
+            {
+                CreatedDate = selectedDate,
+                OrdersToday = await rentOrders.CountAsync(),
+                TotalValueToday = await rentOrders.SumAsync(o => (decimal?)o.TotalFee) ?? 0
+            };
+        }
+
+        public async Task<MonthlyRentBookStatisticsDto> GetMonthlyRentBookStatisticsAsync()
+        {
+            if (!_cache.TryGetValue("MonthlyRentDate", out (int year, int month) selectedDate))
+            {
+                selectedDate = (DateTime.Today.Year, DateTime.Today.Month);
+            }
+
+            var rentOrders = await _context.RentOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == selectedDate.year &&
+                            o.OrderDate.Month == selectedDate.month)
+                .ToListAsync();
+
+            var createdDates = rentOrders
+                .Select(o => o.OrderDate.Date)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+
+            return new MonthlyRentBookStatisticsDto
+            {
+                CreatedDates = createdDates,
+                OrdersThisMonth = rentOrders.Count,
+                TotalValueThisMonth = rentOrders.Sum(o => o.TotalFee)
+            };
+        }
+
+        public async Task<YearlyRentBookStatisticsDto> GetYearlyRentBookStatisticsAsync()
+        {
+            if (!_cache.TryGetValue("YearlyRentDate", out int year))
+            {
+                year = DateTime.Today.Year;
+            }
+
+            var rentOrders = await _context.RentOrders
+                .AsNoTracking()
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Year == year)
+                .ToListAsync();
+
+            var createdDates = rentOrders
+                .Select(o => o.OrderDate.Date)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+
+            return new YearlyRentBookStatisticsDto
+            {
+                CreatedDates = createdDates,
+                OrdersThisYear = rentOrders.Count,
+                TotalValueThisYear = rentOrders.Sum(o => o.TotalFee)
+            };
+        }
+
+        public async Task<List<RentOrder>> GetRentOrdersByDateAsync(DateTime date)
+        {
+            return await _context.RentOrders
+                .Include(o => o.RentOrderDetails)
+                .ThenInclude(d => d.RentBookItem)
+                .ThenInclude(item => item.RentBook)
+                .Where(o => o.Status != OrderStatus.Canceled && o.OrderDate.Date == date.Date)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<RentOrder>> GetRentOrdersByMonthAsync(int year, int month)
+        {
+            var now = DateTime.Today;
+            if (year > now.Year || (year == now.Year && month > now.Month))
+                throw new ArgumentException("Tháng hoặc năm không hợp lệ. Vui lòng nhập lại");
+
+            return await _context.RentOrders
+                .Include(o => o.RentOrderDetails)
+                .ThenInclude(d => d.RentBookItem)
+                .ThenInclude(item => item.RentBook)
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year &&
+                            o.OrderDate.Month == month)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<RentOrder>> GetRentOrdersByYearAsync(int year)
+        {
+            if (year > DateTime.Today.Year)
+                throw new ArgumentException("Năm không hợp lệ vui lòng nhập lại.");
+
+            return await _context.RentOrders
+                .Include(o => o.RentOrderDetails)
+                .ThenInclude(d => d.RentBookItem)
+                .ThenInclude(item => item.RentBook)
+                .Where(o => o.Status != OrderStatus.Canceled &&
+                            o.OrderDate.Year == year)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

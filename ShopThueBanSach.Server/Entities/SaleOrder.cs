@@ -1,5 +1,6 @@
 ﻿using ShopThueBanSach.Server.Models;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace ShopThueBanSach.Server.Entities
@@ -20,7 +21,9 @@ namespace ShopThueBanSach.Server.Entities
         public decimal OriginalTotalAmount { get; set; }
 		public string? PaymentMethod { get; set; }
 		public decimal TotalAmount { get; set; }
-		[JsonIgnore]
+        [NotMapped]
         public List<SaleOrderDetail> Details { get; set; } = new();
+        [JsonIgnore]
+        public virtual ICollection<SaleOrderDetail> SaleOrderDetails { get; set; }  // <-- Quan trọng!
     }
 }

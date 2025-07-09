@@ -12,8 +12,8 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250707084510_dff")]
-    partial class dff
+    [Migration("20250709173739_NewBd")]
+    partial class NewBd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -230,6 +230,9 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.Property<string>("FullName")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUser")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")
@@ -1195,7 +1198,7 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrderDetail", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", "Order")
-                        .WithMany()
+                        .WithMany("RentOrderDetails")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1214,7 +1217,7 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrderDetail", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.SaleOrder", "Order")
-                        .WithMany("Details")
+                        .WithMany("SaleOrderDetails")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1275,6 +1278,8 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrder", b =>
                 {
                     b.Navigation("Payment");
+
+                    b.Navigation("RentOrderDetails");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
@@ -1290,7 +1295,7 @@ namespace ShopThueBanSach.Server.Migrations
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrder", b =>
                 {
-                    b.Navigation("Details");
+                    b.Navigation("SaleOrderDetails");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", b =>

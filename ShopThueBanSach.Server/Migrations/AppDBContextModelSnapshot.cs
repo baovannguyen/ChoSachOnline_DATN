@@ -229,6 +229,9 @@ namespace ShopThueBanSach.Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ImageUser")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1192,7 +1195,7 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrderDetail", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.RentOrder", "Order")
-                        .WithMany()
+                        .WithMany("RentOrderDetails")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1211,7 +1214,7 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrderDetail", b =>
                 {
                     b.HasOne("ShopThueBanSach.Server.Entities.SaleOrder", "Order")
-                        .WithMany("Details")
+                        .WithMany("SaleOrderDetails")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1272,6 +1275,8 @@ namespace ShopThueBanSach.Server.Migrations
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.RentOrder", b =>
                 {
                     b.Navigation("Payment");
+
+                    b.Navigation("RentOrderDetails");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleBook", b =>
@@ -1287,7 +1292,7 @@ namespace ShopThueBanSach.Server.Migrations
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrder", b =>
                 {
-                    b.Navigation("Details");
+                    b.Navigation("SaleOrderDetails");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.ShopThueBanSach.Server.Entities.Author", b =>
