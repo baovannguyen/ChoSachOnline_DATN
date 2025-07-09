@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace ShopThueBanSach.Server.Entities
 {
@@ -8,7 +7,6 @@ namespace ShopThueBanSach.Server.Entities
     {
         public int Id { get; set; }
         public string OrderId { get; set; }
-        [JsonIgnore]
         public RentOrder Order { get; set; }
         public string RentBookItemId { get; set; }
         public RentBookItem RentBookItem { get; set; }

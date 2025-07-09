@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
+using System;
 using System.Threading.Tasks;
 using ShopThueBanSach.Server.Area.Admin.Model.Request;
+
 namespace ShopThueBanSach.Server.Area.Admin.Controllers
 {
     [ApiController]
@@ -16,14 +18,6 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             _reportService = reportService;
         }
 
-        /* // Tổng quan số lượng sách & tổng giá trị tồn
-         [HttpGet("overview")]
-         public async Task<IActionResult> GetOverview()
-         {
-             var result = await _reportService.GetOverviewStatisticsAsync();
-             return Ok(result);
-         }*/
-
         // Tổng hợp đơn hàng Sale
         [HttpGet]
         public async Task<IActionResult> GetOrdersSummary()
@@ -32,33 +26,49 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             return Ok(result);
         }
 
-        // Thống kê Sale theo ngày
+        // --------------------------- SALE ---------------------------
+
+        // GET Sale - Daily
         [HttpGet("sale/daily")]
         public async Task<IActionResult> GetDailySaleStatistics()
         {
             var result = await _reportService.GetDailySaleBookStatisticsAsync();
             return Ok(result);
         }
-        [HttpPost("sale/orders/by-date")]
-        public async Task<IActionResult> PostOrdersByDate([FromBody] SaleOrderByDateRequest request)
+
+        [HttpPost("sale/daily/set-date")]
+        public async Task<IActionResult> SetDailySaleDate([FromBody] DateTime date)
         {
-            var result = await _reportService.GetSaleOrdersByDateAsync(request.Date);
-            return Ok(result);
+            if (date.Date > DateTime.Today)
+                return BadRequest(new { error = "Ngày không hợp lệ vui lòng nhập lại" });
+
+            await _reportService.SetDailySaleDateAsync(date);
+            return Ok(new { message = $"Ngày thống kê bán được chọn là {date:dd/MM/yyyy}" });
         }
-        // Thống kê Sale theo tháng
+
+        // GET Sale - Monthly
         [HttpGet("sale/monthly")]
         public async Task<IActionResult> GetMonthlySaleStatistics()
         {
             var result = await _reportService.GetMonthlySaleBookStatisticsAsync();
             return Ok(result);
         }
-        [HttpPost("sale/orders/by-month")]
-        public async Task<IActionResult> PostOrdersByMonth([FromBody] SaleOrderByMonthRequest request)
+
+        [HttpPost("sale/monthly/set-date")]
+        public async Task<IActionResult> SetMonthlySaleDate([FromBody] SaleOrderByMonthRequest request)
         {
-            var result = await _reportService.GetSaleOrdersByMonthAsync(request.Year, request.Month);
-            return Ok(result);
+            try
+            {
+                await _reportService.SetMonthlySaleDateAsync(request.Year, request.Month);
+                return Ok(new { message = $"Đã chọn tháng {request.Month}/{request.Year} để thống kê bán" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
-        // Thống kê Sale theo năm
+
+        // GET Sale - Yearly
         [HttpGet("sale/yearly")]
         public async Task<IActionResult> GetYearlySaleStatistics()
         {
@@ -66,26 +76,41 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             return Ok(result);
         }
 
-        [HttpPost("sale/orders/by-year")]
-        public async Task<IActionResult> PostOrdersByYear([FromBody] SaleOrderByYearRequest request)
+        [HttpPost("sale/yearly/set-date")]
+        public async Task<IActionResult> SetYearlySaleDate([FromBody] SaleOrderByYearRequest request)
         {
-            var result = await _reportService.GetSaleOrdersByYearAsync(request.Year);
-            return Ok(result);
+            try
+            {
+                await _reportService.SetYearlySaleDateAsync(request.Year);
+                return Ok(new { message = $"Đã chọn năm {request.Year} để thống kê bán" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
-        // Thống kê Rent theo ngày
+
+        // --------------------------- RENT ---------------------------
+
+        // GET Rent - Daily
         [HttpGet("rent/daily")]
         public async Task<IActionResult> GetDailyRentStatistics()
         {
             var result = await _reportService.GetDailyRentBookStatisticsAsync();
             return Ok(result);
         }
-        [HttpPost("rent-orders-by-date")]
-        public async Task<IActionResult> GetRentOrdersByDate([FromBody] RentOrderByDateRequest request)
+
+        [HttpPost("rent/daily/set-date")]
+        public async Task<IActionResult> SetDailyRentDate([FromBody] DateTime date)
         {
-            var result = await _reportService.GetRentOrdersByDateAsync(request.Date);
-            return Ok(result);
+            if (date.Date > DateTime.Today)
+                return BadRequest(new { error = "Ngày không hợp lệ vui lòng nhập lại" });
+
+            await _reportService.SetDailyRentDateAsync(date);
+            return Ok(new { message = $"Ngày thống kê thuê được chọn là {date:dd/MM/yyyy}" });
         }
-        // Thống kê Rent theo tháng
+
+        // GET Rent - Monthly
         [HttpGet("rent/monthly")]
         public async Task<IActionResult> GetMonthlyRentStatistics()
         {
@@ -93,13 +118,17 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             return Ok(result);
         }
 
-        [HttpPost("rent-orders-by-month")]
-        public async Task<IActionResult> GetRentOrdersByMonth([FromBody] RentOrderByMonthRequest request)
+        [HttpPost("rent/monthly/set-date")]
+        public async Task<IActionResult> SetMonthlyRentDate([FromBody] RentOrderByMonthRequest request)
         {
-            var result = await _reportService.GetRentOrdersByMonthAsync(request.Year, request.Month);
-            return Ok(result);
+            var now = DateTime.Today;
+            if (request.Year > now.Year || (request.Year == now.Year && request.Month > now.Month))
+                return BadRequest(new { error = "Tháng hoặc năm không hợp lệ. Vui lòng nhập lại" });
+
+            await _reportService.SetMonthlyRentDateAsync(request.Year, request.Month);
+            return Ok(new { message = $"Đã chọn tháng {request.Month}/{request.Year} để thống kê thuê" });
         }
-        // Thống kê Rent theo năm
+        // GET Rent - Yearly
         [HttpGet("rent/yearly")]
         public async Task<IActionResult> GetYearlyRentStatistics()
         {
@@ -107,19 +136,26 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             return Ok(result);
         }
 
-
-        [HttpPost("rent-orders-by-year")]
-        public async Task<IActionResult> GetRentOrdersByYear([FromBody] RentOrderByYearRequest request)
+        // GET Rent - Yearly
+        [HttpPost("rent/yearly/set-date")]
+        public async Task<IActionResult> SetYearlyRentDate([FromBody] RentOrderByYearRequest request)
         {
-            var result = await _reportService.GetRentOrdersByYearAsync(request.Year);
-            return Ok(result);
+            if (request.Year > DateTime.Today.Year)
+                return BadRequest(new { error = "Năm không hợp lệ. Vui lòng nhập lại" });
+
+            await _reportService.SetYearlyRentDateAsync(request.Year);
+            return Ok(new { message = $"Đã chọn năm {request.Year} để thống kê thuê" });
         }
 
 
+      /*  [HttpPost("rent-orders-by-year")]
+        public async Task<IActionResult> GetRentOrdersByYear([FromBody] RentOrderByYearRequest request)
+        {
+            if (request.Year > DateTime.Today.Year)
+                return BadRequest(new { error = "Năm không hợp lệ vui lòng nhập lại" });
 
-
-
-
-
+            var result = await _reportService.GetRentOrdersByYearAsync(request.Year);
+            return Ok(result);
+        }*/
     }
 }
