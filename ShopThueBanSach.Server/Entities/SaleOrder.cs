@@ -10,7 +10,8 @@ namespace ShopThueBanSach.Server.Entities
         [Key]
         public string OrderId { get; set; } = Guid.NewGuid().ToString();
         public string UserId { get; set; } = null!;
-        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
+		public string? UserName { get; set; } // Tên người dùng, có thể null nếu không đăng nhập
+		public DateTime OrderDate { get; set; } = DateTime.UtcNow;
       
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
         public bool HasShippingFee { get; set; }

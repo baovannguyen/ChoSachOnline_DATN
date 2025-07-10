@@ -18,30 +18,45 @@ namespace ShopThueBanSach.Server.Controllers
             _saleOrderService = saleOrderService;
         }
 
-        [Authorize]
-        [HttpPost("create-cash")]
-        public async Task<IActionResult> CreateOrderCash([FromBody] SaleOrderRequest request)
-        {
+		[Authorize]
+		[HttpPost("create-cash")]
+		public async Task<IActionResult> CreateOrderCash([FromBody] SaleOrderRequest request)
+		{
 			var user = User;
-			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            request.UserId = userId;
+			var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
+					  ?? user.FindFirstValue("sub");
 
-            if (request.SelectedProductIds == null || !request.SelectedProductIds.Any())
-                return BadRequest("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
+			var userName = user.FindFirstValue(ClaimTypes.Name)
+						 ?? user.FindFirstValue("name")
+						 ?? user.FindFirstValue("unique_name");
 
-            try
-            {
-                return await _saleOrderService.CreateSaleOrderWithCashAsync(request);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi tạo đơn hàng thanh toán tiền mặt", detail = ex.Message });
-            }
-        }
+			if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userName))
+				return Unauthorized("Không xác định được thông tin người dùng.");
 
-        [Authorize]
+			// Gán thông tin người dùng vào request trước khi gọi service
+			request.UserId = userId;
+			request.UserName = userName;
+
+			if (request.SelectedProductIds == null || !request.SelectedProductIds.Any())
+				return BadRequest("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
+
+			try
+			{
+				return await _saleOrderService.CreateSaleOrderWithCashAsync(request);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new
+				{
+					message = "Lỗi khi tạo đơn hàng thanh toán tiền mặt",
+					detail = ex.Message
+				});
+			}
+		}
+
+
+		[Authorize]
         [HttpPost("create-momo")]
         public async Task<IActionResult> CreateOrderMoMo([FromBody] SaleOrderRequest request)
         {
