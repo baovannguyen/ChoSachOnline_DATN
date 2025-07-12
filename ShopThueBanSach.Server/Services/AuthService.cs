@@ -133,7 +133,7 @@ $@"
                     await _context.SaveChangesAsync();
                 }
             }
-
+			
             return new AuthResult
             {
                 IsSuccess = true,
