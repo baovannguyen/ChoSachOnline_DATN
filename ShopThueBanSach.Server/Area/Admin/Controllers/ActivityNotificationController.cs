@@ -8,11 +8,11 @@ namespace ShopThueBanSach.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize(Roles = "Admin")]
     public class ActivityNotificationController : ControllerBase
     {
         private readonly IActivityNotificationService _notificationService;
         private readonly AppDBContext _context;
-
         // ✅ Thêm AppDBContext vào constructor
         public ActivityNotificationController(
             IActivityNotificationService notificationService,
@@ -26,8 +26,25 @@ namespace ShopThueBanSach.Server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var notifications = await _context.ActivityNotifications
+            var user = HttpContext.User;
+
+            if (user == null || !user.Identity.IsAuthenticated)
+                return Unauthorized();
+
+            var userId = user.FindFirst("UserId")?.Value;
+            var isAdmin = user.IsInRole("Admin");
+
+            var query = _context.ActivityNotifications
                 .Include(n => n.Staff)
+                .AsQueryable();
+
+            if (!isAdmin)
+            {
+                // Nếu không phải admin thì chỉ xem được thông báo của chính mình
+                query = query.Where(n => n.StaffId == userId);
+            }
+
+            var notifications = await query
                 .OrderByDescending(n => n.CreatedDate)
                 .Select(n => new
                 {

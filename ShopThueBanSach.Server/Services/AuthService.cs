@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using ShopThueBanSach.Server.Data;
@@ -12,7 +13,7 @@ using System.Text;
 namespace ShopThueBanSach.Server.Services
 {
 	public class AuthService(UserManager<User> userManager, AppDBContext context, RoleManager<IdentityRole> roleManager,
-		IConfiguration configuration, SignInManager<User> signInManager, IMemoryCache cache, IHttpContextAccessor httpContextAccessor, IEmailSender emailSender) : IAuthService
+		IConfiguration configuration, SignInManager<User> signInManager, IMemoryCache cache, IHttpContextAccessor httpContextAccessor, IEmailSender emailSender, IActivityNotificationService activityNotificationService) : IAuthService
 	{
 		private readonly UserManager<User> _userManager = userManager;
 		private readonly IConfiguration _configuration = configuration;
@@ -22,8 +23,8 @@ namespace ShopThueBanSach.Server.Services
 		private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 		private readonly IEmailSender _emailSender = emailSender;
 		private readonly IMemoryCache _cache = cache;
-
-		public async Task<AuthResult> RegisterAsync(RegisterDto dto)
+        private readonly IActivityNotificationService _activityNotificationService;
+        public async Task<AuthResult> RegisterAsync(RegisterDto dto)
 		{
 			// Kiểm tra Email đã tồn tại chưa
 			var existingUser = await _userManager.FindByEmailAsync(dto.Email);
@@ -89,39 +90,60 @@ $@"
 
 
 
-		public async Task<AuthResult> LoginAsync(LoginDto model)
-		{
-			var user = await _userManager.FindByEmailAsync(model.Email);
-			if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
-				return new AuthResult { IsSuccess = false, Message = "Email hoặc mật khẩu không đúng." };
+        public async Task<AuthResult> LoginAsync(LoginDto model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
+                return new AuthResult { IsSuccess = false, Message = "Email hoặc mật khẩu không đúng." };
 
-			if (!user.EmailConfirmed)
-				return new AuthResult { IsSuccess = false, Message = "Vui lòng xác nhận email trước khi đăng nhập." };
+            if (!user.EmailConfirmed)
+                return new AuthResult { IsSuccess = false, Message = "Vui lòng xác nhận email trước khi đăng nhập." };
 
-			var jwtToken = GenerateJwtToken(user);
-			var refreshToken = GenerateRefreshToken();
-			_httpContextAccessor.HttpContext?.Response.Cookies.Append(
-			"refreshToken",
-			refreshToken,
-			new CookieOptions
-			{
-				HttpOnly = true,
-				Secure = true,
-				SameSite = SameSiteMode.Strict,
-				Expires = DateTimeOffset.UtcNow.AddDays(7)
-			});
+            var jwtToken = GenerateJwtToken(user);
+            var refreshToken = GenerateRefreshToken();
 
+            _httpContextAccessor.HttpContext?.Response.Cookies.Append(
+                "refreshToken",
+                refreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7)
+                });
 
-			return new AuthResult
-			{
-				IsSuccess = true,
-				Token = jwtToken,
-				RefreshToken = refreshToken,
-				Message = "Đăng nhập thành công."
-			};
-		}
+            // ✅ Gửi thông báo nếu là Staff đăng nhập
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Contains("Staff"))
+            {
+                var staff = await _context.Staffs.FirstOrDefaultAsync(s => s.Email == user.Email);
+                if (staff != null)
+                {
+                    var description = $"Nhân viên {staff.FullName} đã đăng nhập vào hệ thống lúc {DateTime.Now:HH:mm dd/MM/yyyy}.";
+                    var notification = new ActivityNotification
+                    {
+                        NotificationId = Guid.NewGuid().ToString(),
+                        StaffId = staff.StaffId,
+                        Description = description,
+                        CreatedDate = DateTime.Now
+                    };
 
-		public async Task<AuthResult> RefreshTokenAsync(TokenRequestDto model)
+                    _context.ActivityNotifications.Add(notification);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            return new AuthResult
+            {
+                IsSuccess = true,
+                Token = jwtToken,
+                RefreshToken = refreshToken,
+                Message = "Đăng nhập thành công."
+            };
+        }
+
+        public async Task<AuthResult> RefreshTokenAsync(TokenRequestDto model)
 		{
 			var principal = GetPrincipalFromExpiredToken(model.AccessToken);
 			if (principal == null)
