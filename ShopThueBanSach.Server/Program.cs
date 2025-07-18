@@ -1,4 +1,7 @@
 ﻿
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Facebook;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,133 +19,152 @@ using System.Text;
 
 namespace ShopThueBanSach.Server
 {
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
-            builder.Services.AddDistributedMemoryCache();
-            builder.Services.AddSession(options =>
-            {
-                options.IdleTimeout = TimeSpan.FromHours(2);
-                options.Cookie.HttpOnly = true;
-                options.Cookie.IsEssential = true;
+	public class Program
+	{
+		public static async Task Main(string[] args)
+		{
+			var builder = WebApplication.CreateBuilder(args);
+			builder.Services.AddDistributedMemoryCache();
+			builder.Services.AddSession(options =>
+			{
+				options.IdleTimeout = TimeSpan.FromHours(2);
+				options.Cookie.HttpOnly = true;
+				options.Cookie.IsEssential = true;
 				options.Cookie.SameSite = SameSiteMode.None; // ✅ thêm dòng này
 				options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 			}); // Thêm bộ nhớ đệm cho Session
-            builder.Services.AddHttpContextAccessor(); // cần để lấy Session
-            builder.Services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new() { Title = "Identity API", Version = "v1" });
+			builder.Services.AddHttpContextAccessor(); // cần để lấy Session
+			builder.Services.AddSwaggerGen(c =>
+			{
+				c.SwaggerDoc("v1", new() { Title = "Identity API", Version = "v1" });
 
-                // Thêm cấu hình security definition
-                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                {
-                    Description = @"JWT Authorization header using the Bearer scheme.
+				// Thêm cấu hình security definition
+				c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+				{
+					Description = @"JWT Authorization header using the Bearer scheme.
                         Enter 'Bearer' [space] and then your token in the text input below.
                         Example: 'Bearer eyJhbGciOiJIUzI1NiIs...'",
-                    Name = "Authorization",
-                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-                    Scheme = "Bearer"
-                });
+					Name = "Authorization",
+					In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+					Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+					Scheme = "Bearer"
+				});
 
-                c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
-                {
-                    {
-                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                    {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                        {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        },
-                            Scheme = "oauth2",
-                            Name = "Bearer",
-                            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+				c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
+				{
+					{
+					new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+					{
+						Reference = new Microsoft.OpenApi.Models.OpenApiReference
+						{
+							Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+							Id = "Bearer"
+						},
+							Scheme = "oauth2",
+							Name = "Bearer",
+In = Microsoft.OpenApi.Models.ParameterLocation.Header,
 
-                    },
-                            new List<string>()
-                    }
-                });
-            });
-            // ✅ THÊM DÒNG NÀY để giữ nguyên PascalCase (CategoryId, AuthorId, ...)
-            builder.Services.AddControllers()
-                .AddJsonOptions(options =>
-                {
-                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
-                });
-            // Add services to the container.
+					},
+							new List<string>()
+					}
+				});
+			});
+			// ✅ THÊM DÒNG NÀY để giữ nguyên PascalCase (CategoryId, AuthorId, ...)
+			builder.Services.AddControllers()
+				.AddJsonOptions(options =>
+				{
+					options.JsonSerializerOptions.PropertyNamingPolicy = null;
+				});
+			// Add services to the container.
 
-            builder.Services.AddControllers();
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<IEmailSender, EmailSender>();
-            builder.Services.AddScoped<ICustomerService, CustomerService>();
-            builder.Services.AddScoped<IStaffService, StaffService>();
-            builder.Services.AddScoped<IAuthorService, AuthorService>();
-            builder.Services.AddScoped<ICategoryService, CategoryService>();
-            builder.Services.AddScoped<IRentBookService, RentBookService>();
-            builder.Services.AddScoped<ISaleBookService, SaleBookService>();
-            builder.Services.AddScoped<IRentBookItemService, RentBookItemService>();
-            builder.Services.AddScoped<IReportService, ReportService>();
-            builder.Services.AddScoped<IActivityNotificationService, ActivityNotificationService>();
-            builder.Services.AddScoped<IUserManagerService, UserManagerService>();
-            builder.Services.AddScoped<ISlideService, SlideService>();
-            // Đăng ký các dịch vụ nghiệp vụ
-            builder.Services.AddScoped<IDiscountCodeService, DiscountCodeService>();
-            builder.Services.AddScoped<IPromotionService, PromotionService>();
-            // Đăng ký dịch vụ VoucherService với interface IVoucherService
-            builder.Services.AddScoped<IVoucherService, VoucherService>();
-            // Đăng ký dịch vụ FavoriteBookService
-            builder.Services.AddScoped<IFavoriteBookService, FavoriteBookService>();
-            builder.Services.AddScoped<ICartRentService, CartRentService>();
-            builder.Services.AddScoped<IRentOrderService, RentOrderService>();
-            builder.Services.Configure<MomoConfig>(builder.Configuration.GetSection("Momo"));
-            builder.Services.AddScoped<IMoMoPaymentService, MoMoPaymentService>();
-            builder.Services.AddScoped<IMoMoCallbackService, MoMoCallbackService>();
-            builder.Services.AddScoped<IRoleService, RoleService>();
-            builder.Services.AddScoped<IFavoriteRentBookService, FavoriteRentBookService>();
-            builder.Services.AddScoped<ICommentService, CommentService>();
+			builder.Services.AddControllers();
+			builder.Services.AddScoped<IAuthService, AuthService>();
+			builder.Services.AddScoped<IUserService, UserService>();
+			builder.Services.AddScoped<IEmailSender, EmailSender>();
+			builder.Services.AddScoped<ICustomerService, CustomerService>();
+			builder.Services.AddScoped<IStaffService, StaffService>();
+			builder.Services.AddScoped<IAuthorService, AuthorService>();
+			builder.Services.AddScoped<ICategoryService, CategoryService>();
+			builder.Services.AddScoped<IRentBookService, RentBookService>();
+			builder.Services.AddScoped<ISaleBookService, SaleBookService>();
+			builder.Services.AddScoped<IRentBookItemService, RentBookItemService>();
+			builder.Services.AddScoped<IReportService, ReportService>();
+			builder.Services.AddScoped<IActivityNotificationService, ActivityNotificationService>();
+			builder.Services.AddScoped<IUserManagerService, UserManagerService>();
+			builder.Services.AddScoped<ISlideService, SlideService>();
+			// Đăng ký các dịch vụ nghiệp vụ
+			builder.Services.AddScoped<IDiscountCodeService, DiscountCodeService>();
+			builder.Services.AddScoped<IPromotionService, PromotionService>();
+			// Đăng ký dịch vụ VoucherService với interface IVoucherService
+			builder.Services.AddScoped<IVoucherService, VoucherService>();
+			// Đăng ký dịch vụ FavoriteBookService
+			builder.Services.AddScoped<IFavoriteBookService, FavoriteBookService>();
+			builder.Services.AddScoped<ICartRentService, CartRentService>();
+			builder.Services.AddScoped<IRentOrderService, RentOrderService>();
+			builder.Services.Configure<MomoConfig>(builder.Configuration.GetSection("Momo"));
+			builder.Services.AddScoped<IMoMoPaymentService, MoMoPaymentService>();
+			builder.Services.AddScoped<IMoMoCallbackService, MoMoCallbackService>();
+			builder.Services.AddScoped<IRoleService, RoleService>();
+			builder.Services.AddScoped<IFavoriteRentBookService, FavoriteRentBookService>();
+			builder.Services.AddScoped<ICommentService, CommentService>();
 
-            builder.Services.AddScoped<ISaleCartService, SaleCartService>();
-            builder.Services.AddScoped<ISaleOrderService, SaleOrderService>();
-            builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
-            builder.Services.AddScoped<ISaleOrderManagementService, SaleOrderManagementService>();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(options =>
-            {
-                options.OperationFilter<SwaggerFileOperationFilter>(); // Hỗ trợ IFormFile
-            });
-            builder.Services.AddHttpContextAccessor();
-            builder.Services.AddMemoryCache();
-            builder.Services.AddDbContext<AppDBContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            builder.Services.AddIdentity<User, IdentityRole>()
-            .AddEntityFrameworkStores<AppDBContext>()
-            .AddDefaultTokenProviders();
+			builder.Services.AddScoped<ISaleCartService, SaleCartService>();
+			builder.Services.AddScoped<ISaleOrderService, SaleOrderService>();
+			builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
+			builder.Services.AddScoped<ISaleOrderManagementService, SaleOrderManagementService>();
+			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+			builder.Services.AddEndpointsApiExplorer();
+			builder.Services.AddSwaggerGen(options =>
+			{
+				options.OperationFilter<SwaggerFileOperationFilter>(); // Hỗ trợ IFormFile
+			});
+			builder.Services.AddHttpContextAccessor();
+			builder.Services.AddMemoryCache();
+			builder.Services.AddDbContext<AppDBContext>(options =>
+				options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+			builder.Services.AddIdentity<User, IdentityRole>()
+			.AddEntityFrameworkStores<AppDBContext>()
+			.AddDefaultTokenProviders();
 
-            // Add JWT Authentication
-            builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                    ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-                    RoleClaimType = ClaimTypes.Role
-                };
-            });
+			builder.Services.Configure<IdentityOptions>(options =>
+			{
+				options.User.AllowedUserNameCharacters =
+					"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@ +đĐăĂâÂêÊôÔơƠưƯáàạảãấầậẩẫắằặẳẵéèẹẻẽếềệểễíìịỉĩóòọỏõốồộổỗớờợởỡúùụủũứừựửữýỳỵỷỹÁÀẠẢÃẤẦẬẨẪẮẰẶẲẴÉÈẸẺẼẾỀỆỂỄÍÌỊỈĨÓÒỌỎÕỐỒỘỔỖỚỜỢỞỠÚÙỤỦŨỨỪỰỬỮÝỲỴỶỸ ";
+			});
+
+			// Add JWT Authentication
+			builder.Services.AddAuthentication(options =>
+			{
+				options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+				options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+				options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+				options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+			}).AddCookie().AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+			{
+				options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+				options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+			}).AddFacebook(FacebookDefaults.AuthenticationScheme, options =>
+			{
+				options.AppId = builder.Configuration["Authentication:Facebook:AppId"]!;
+				options.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"]!;
+				options.Scope.Add("email");
+				options.Fields.Add("email");
+				options.Fields.Add("name");
+			})
+			.AddJwtBearer(options =>
+			{
+				options.TokenValidationParameters = new TokenValidationParameters
+				{
+					ValidateIssuer = true,
+					ValidateAudience = true,
+					ValidateLifetime = true,
+					ValidateIssuerSigningKey = true,
+					ValidIssuer = builder.Configuration["Jwt:Issuer"],
+					ValidAudience = builder.Configuration["Jwt:Audience"],
+					IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+					RoleClaimType = ClaimTypes.Role
+				};
+			});
 			builder.Services.AddCors(options =>
 			{
 				options.AddPolicy("AllowFrontend", builder =>
@@ -156,35 +178,35 @@ namespace ShopThueBanSach.Server
 
 			var app = builder.Build();
 
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
-           
-            
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "DATN API V1");
-                });
-            }
-            //SeedData
-            using (var scope = app.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                await SeedData.InitializeAsync(services);
-            }
-            app.UseHttpsRedirection();
+			app.UseDefaultFiles();
+			app.UseStaticFiles();
+
+
+			if (app.Environment.IsDevelopment())
+			{
+				app.UseSwagger();
+				app.UseSwaggerUI(c =>
+				{
+					c.SwaggerEndpoint("/swagger/v1/swagger.json", "DATN API V1");
+				});
+			}
+			//SeedData
+			using (var scope = app.Services.CreateScope())
+			{
+				var services = scope.ServiceProvider;
+				await SeedData.InitializeAsync(services);
+			}
+			app.UseHttpsRedirection();
 			app.UseCors("AllowFrontend");
 			app.UseSession();
 			app.UseAuthentication();
-            app.UseAuthorization();
+			app.UseAuthorization();
 
-            app.MapControllers();
+			app.MapControllers();
 
-            app.MapFallbackToFile("/index.html");
+			app.MapFallbackToFile("/index.html");
 
-            app.Run();
-        }
-    }
+			app.Run();
+		}
+	}
 }

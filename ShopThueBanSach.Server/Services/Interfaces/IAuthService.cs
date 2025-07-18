@@ -1,4 +1,5 @@
-﻿using ShopThueBanSach.Server.Models.AuthModel;
+﻿using Microsoft.AspNetCore.Authentication;
+using ShopThueBanSach.Server.Models.AuthModel;
 
 namespace ShopThueBanSach.Server.Services.Interfaces
 {
@@ -11,5 +12,14 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<AuthResult> ConfirmEmailByCodeAsync(string email, string code);
         Task<AuthResult> SendResetPasswordCodeAsync(string email);
         Task<AuthResult> ResetPasswordAsync(ResetPasswordDto model);
-    }
+		#region login Google
+		AuthenticationProperties GetGoogleLoginProperties(string returnUrl);
+		Task<AuthResult> ExternalLoginCallbackAsync();
+		#endregion
+
+		#region login Facebook
+		AuthenticationProperties GetFacebookLoginProperties(string returnUrl);
+		Task<AuthResult> ExternalFacebookCallbackAsync();
+		#endregion
+	}
 }

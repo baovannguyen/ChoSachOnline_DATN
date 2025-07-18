@@ -106,7 +106,7 @@ namespace ShopThueBanSach.Server.Services
                 if (item.Quantity > product.Quantity)
                     return new BadRequestObjectResult($"Số lượng vượt quá tồn kho của sản phẩm {product.Title}");
 
-                decimal lineTotal = item.Quantity * product.Price;
+                decimal lineTotal = item.Quantity * product.FinalPrice;
                 totalAmount += lineTotal;
 
                 orderDetails.Add(new SaleOrderDetail

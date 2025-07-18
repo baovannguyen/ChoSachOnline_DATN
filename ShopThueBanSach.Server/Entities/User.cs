@@ -7,7 +7,7 @@ namespace ShopThueBanSach.Server.Entities
 	{
 		//public string? Role { get; set; }
 		public string? Address { get; set; }
-		public DateTime DateOfBirth { get; set; }
+		public DateTime? DateOfBirth { get; set; }
 		public double Points { get; set; }
 		public string? ImageUser { get; set; }
 		[JsonIgnore] // Bỏ qua khi serialize JSON

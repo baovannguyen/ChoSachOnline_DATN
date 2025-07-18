@@ -152,7 +152,7 @@ namespace ShopThueBanSach.Server.Services
                 TotalDeposit = totalDeposit,
                 TotalFee = totalFee + totalDeposit,
                 OrderDate = DateTime.Now,
-                Status = rentalDays > 60 ? OrderStatus.Pending : OrderStatus.Overdue,
+                Status =OrderStatus.Pending ,
             };
 
             return new RentOrderResult

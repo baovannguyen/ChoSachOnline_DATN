@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Area.Admin.Entities;
+using ShopThueBanSach.Server.Area.Admin.Model.StaffModel;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Data;
 using ShopThueBanSach.Server.Entities;
@@ -94,17 +95,17 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             return staff;
         }
 
-        public async Task<Staff?> UpdateAsync(StaffDto dto)
-        {
-            var existing = await _context.Staffs.FindAsync(dto.StaffId);
-            if (existing == null) return null;
+		public async Task<Staff?> UpdateAsync(UpdateStaffDto dto, string id)
+		{
+			var existing = await _context.Staffs.FindAsync(id);
+			if (existing == null) return null;
 
             existing.FullName = dto.FullName;
             existing.Password = dto.Password;
             existing.PhoneNumber = dto.PhoneNumber;
             existing.Address = dto.Address;
             existing.DateOfBirth = dto.DateOfBirth;
-            existing.Email = dto.Email;
+           
 
             if (dto.ImageFile != null)
             {

@@ -1,6 +1,7 @@
 ﻿// Controllers/StaffController.cs
 using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Area.Admin.Entities;
+using ShopThueBanSach.Server.Area.Admin.Model.StaffModel;
 using ShopThueBanSach.Server.Area.Admin.Service.Interface;
 using ShopThueBanSach.Server.Models.StaffModel;
 
@@ -52,12 +53,13 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
         /* ---------- UPDATE ---------- */
         // PUT: api/Staff/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromForm] StaffDto dto)
-        {
-            if (id != dto.StaffId) return BadRequest("Id mismatch");
+		public async Task<IActionResult> Update([FromForm] UpdateStaffDto dto, string id)
+		{
 
-            var updated = await _staffService.UpdateAsync(dto);
-            return updated == null ? NotFound() : Ok(updated);
+
+			var updated = await _staffService.UpdateAsync(dto, id);
+
+			return updated == null ? NotFound() : Ok(updated);
         }
 
         /* ---------- DELETE ---------- */
