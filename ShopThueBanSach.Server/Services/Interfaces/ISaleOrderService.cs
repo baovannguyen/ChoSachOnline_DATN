@@ -13,5 +13,8 @@ namespace ShopThueBanSach.Server.Services.Interfaces
 
         // Tạo đơn hàng sau khi thanh toán MoMo thành công (gọi từ callback)
         Task CreateSaleOrderAfterMoMoAsync(SaleOrderRequest request);
-    }
+		Task<string> PrepareVnPaySaleOrderAsync(SaleOrderRequest request, HttpContext httpContext);
+
+		Task<IActionResult> CreateSaleOrderAfterVnPayAsync(HttpContext httpContext);
+	}
 }

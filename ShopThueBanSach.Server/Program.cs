@@ -14,6 +14,7 @@ using ShopThueBanSach.Server.Models;
 using ShopThueBanSach.Server.Models.PaymentMethod;
 using ShopThueBanSach.Server.Services;
 using ShopThueBanSach.Server.Services.Interfaces;
+using ShopThueBanSach.Server.Services.Vnpay;
 using System.Security.Claims;
 using System.Text;
 
@@ -175,7 +176,7 @@ In = Microsoft.OpenApi.Models.ParameterLocation.Header,
 						   .AllowCredentials();
 				});
 			});
-
+			builder.Services.AddScoped<IVnPayService, VnPayService>();
 			var app = builder.Build();
 
 			app.UseDefaultFiles();

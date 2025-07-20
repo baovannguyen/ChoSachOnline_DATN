@@ -9,23 +9,140 @@ using Microsoft.EntityFrameworkCore;
 using ShopThueBanSach.Server.Models.SaleModel.CartSaleModel;
 using Newtonsoft.Json;
 using ShopThueBanSach.Server.Models.SaleModel.SaleOrderModel;
+using ShopThueBanSach.Server.Models.Vnpay;
+using ShopThueBanSach.Server.Services.Vnpay;
 
 namespace ShopThueBanSach.Server.Services
 {
     public partial class SaleOrderService : ISaleOrderService
     {
-        private readonly AppDBContext _context;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IMoMoPaymentService _moMoPaymentService;
+		private readonly AppDBContext _context;
+		private readonly IHttpContextAccessor _httpContextAccessor;
+		private readonly IMoMoPaymentService _moMoPaymentService;
+		private readonly IVnPayService _vnPayService;
+		private readonly ISaleCartService _cartService;
 
-        public SaleOrderService(AppDBContext context, IHttpContextAccessor httpContextAccessor, IMoMoPaymentService moMoPaymentService)
-        {
-            _context = context;
-            _httpContextAccessor = httpContextAccessor;
-            _moMoPaymentService = moMoPaymentService;
-        }
+		public SaleOrderService(
+			AppDBContext context,
+			IHttpContextAccessor httpContextAccessor,
+			IMoMoPaymentService moMoPaymentService,
+			IVnPayService vnPayService,
+			ISaleCartService cartService)
+		{
+			_context = context;
+			_httpContextAccessor = httpContextAccessor;
+			_moMoPaymentService = moMoPaymentService;
+			_vnPayService = vnPayService;
+			_cartService = cartService;
+		}
 
-        public async Task<IActionResult> CreateSaleOrderWithCashAsync(SaleOrderRequest request)
+		public async Task<string> PrepareVnPaySaleOrderAsync(SaleOrderRequest request, HttpContext httpContext)
+		{
+			// 1. Lấy giỏ hàng đã chọn
+			var selectedItems = _cartService.GetSelectedItems();
+
+			if (selectedItems == null || !selectedItems.Any())
+				throw new Exception("Không có sản phẩm nào được chọn trong giỏ hàng.");
+
+			// 2. Tính tổng tiền
+			var total = selectedItems.Sum(x => x.UnitPrice * x.Quantity);
+
+			// 3. Tạo thông tin lưu session
+			var sessionModel = new PaymentSessionModel
+			{
+				CartItems = selectedItems.Select(x => new CartItemSale
+				{
+					ProductId = x.ProductId,
+					ProductName = x.ProductName,
+					Quantity = x.Quantity,
+					UnitPrice = x.UnitPrice
+				}).ToList(),
+				UserId = request.UserId,
+				Amount = total,
+				OrderDescription = $"Thanh toán đơn hàng thuê sách lúc {DateTime.Now:yyyy-MM-dd HH:mm:ss}"
+			};
+
+			// 4. Lưu vào Session
+			httpContext.Session.SetString("VNPayOrderSession", System.Text.Json.JsonSerializer.Serialize(sessionModel));
+
+			// 5. Tạo thông tin thanh toán cho VNPay
+			var paymentInfo = new PaymentInformationModel
+			{
+				OrderType = "book_rental",
+				Amount = (decimal)total,
+				OrderDescription = sessionModel.OrderDescription,
+				Name = request.UserId ?? "unknown"
+			};
+
+			// 6. Trả về URL thanh toán
+			return _vnPayService.CreatePaymentUrl(paymentInfo, httpContext);
+		}
+
+
+
+		public async Task<IActionResult> CreateSaleOrderAfterVnPayAsync(HttpContext httpContext)
+		{
+			// 1. Lấy thông tin từ Session
+			var sessionData = httpContext.Session.GetString("VNPayOrderSession");
+
+			if (string.IsNullOrEmpty(sessionData))
+				return new BadRequestObjectResult(new { success = false, message = "Session thanh toán đã hết hạn." });
+
+			var model = System.Text.Json.JsonSerializer.Deserialize<PaymentSessionModel>(sessionData);
+
+			if (model == null || model.CartItems == null || !model.CartItems.Any())
+				return new BadRequestObjectResult("Không có sản phẩm trong đơn hàng.");
+
+			// 2. Tạo danh sách chi tiết đơn hàng
+			var details = model.CartItems.Select(item => new SaleOrderDetail
+			{
+				ProductId = item.ProductId,
+				ProductName = item.ProductName,
+				Quantity = item.Quantity,
+				UnitPrice = item.UnitPrice,
+				SubTotal = item.Quantity * item.UnitPrice
+			}).ToList();
+
+			// 3. Tạo đơn hàng
+			var order = new SaleOrder
+			{
+				OrderId = Guid.NewGuid().ToString(),
+				UserId = model.UserId,
+				OrderDate = DateTime.UtcNow,
+				TotalAmount = model.Amount,
+				OriginalTotalAmount = model.Amount,
+				DiscountAmount = 0,
+				PaymentMethod = "VNPAY",
+				Status = OrderStatus.Pending,
+				HasShippingFee = false,
+				ShippingFee = 0
+			};
+
+			foreach (var detail in details)
+				detail.OrderId = order.OrderId;
+
+			var result = new SaleOrderResult
+			{
+				Order = order,
+				Details = details,
+				VoucherCode = null
+			};
+
+			// 4. Lưu đơn hàng và cập nhật hệ thống
+			await SaveOrderAsync(result);
+
+			// 5. Xoá session
+			httpContext.Session.Remove("VNPayOrderSession");
+
+			return new OkObjectResult(new
+			{
+				success = true,
+				message = "Thanh toán và tạo đơn hàng thành công",
+				orderId = order.OrderId
+			});
+		}
+
+		public async Task<IActionResult> CreateSaleOrderWithCashAsync(SaleOrderRequest request)
         {
             var result = await BuildOrderFromSessionCartAsync(request);
             if (result is IActionResult error) return error;

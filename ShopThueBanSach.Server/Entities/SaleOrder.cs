@@ -11,8 +11,8 @@ namespace ShopThueBanSach.Server.Entities
         public string OrderId { get; set; } = Guid.NewGuid().ToString();
         public string UserId { get; set; } = null!;
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
-      
-        public OrderStatus Status { get; set; } = OrderStatus.Pending;
+		public string? Description { get; set; }
+		public OrderStatus Status { get; set; } = OrderStatus.Pending;
         public bool HasShippingFee { get; set; }
         public decimal ShippingFee { get; set; }
         public decimal DiscountAmount { get; set; } = 0;
