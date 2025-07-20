@@ -108,7 +108,7 @@ namespace ShopThueBanSach.Server.Services
 			entity.Status = dto.Status;
 			entity.StatusDescription = dto.StatusDescription;
 			entity.Condition = dto.Condition;
-			entity.IsHidden = dto.Condition >= 80;
+			entity.IsHidden = dto.Condition >= 70;
 
 			await _context.SaveChangesAsync();
 

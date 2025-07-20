@@ -16,8 +16,15 @@ namespace ShopThueBanSach.Server.Controllers
             _commentService = commentService;
         }
 
-        // GET: api/comment/book/{bookId}
-        [HttpGet("book/{bookId}")]
+        // GET: api/comment/all
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllComments()
+        {
+            var comments = await _commentService.GetAllCommentsAsync();
+            return Ok(comments);
+        }
+			// GET: api/comment/book/{bookId}
+			[HttpGet("book/{bookId}")]
         public async Task<IActionResult> GetAll(string bookId)
         {
             var comments = await _commentService.GetAllAsync(bookId);

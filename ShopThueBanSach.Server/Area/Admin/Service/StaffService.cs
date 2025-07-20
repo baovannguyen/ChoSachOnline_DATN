@@ -97,11 +97,11 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
 
 		public async Task<Staff?> UpdateAsync(UpdateStaffDto dto, string id)
 		{
+              
 			var existing = await _context.Staffs.FindAsync(id);
 			if (existing == null) return null;
 
             existing.FullName = dto.FullName;
-            existing.Password = dto.Password;
             existing.PhoneNumber = dto.PhoneNumber;
             existing.Address = dto.Address;
             existing.DateOfBirth = dto.DateOfBirth;
@@ -124,6 +124,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             {
                 user.UserName = existing.FullName;
                 user.Address = existing.Address;
+                user.PhoneNumber = existing.PhoneNumber;
                 user.DateOfBirth = existing.DateOfBirth ?? DateTime.Now;
 
                 if (!string.IsNullOrWhiteSpace(existing.Password))

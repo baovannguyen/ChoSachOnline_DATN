@@ -5,7 +5,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Entities
     public class Staff
     {
         [Key]
-        public string StaffId { get; set; } = Guid.NewGuid().ToString(); // hoặc tạo mã theo quy tắc riêng
+        public string StaffId { get; set; } // hoặc tạo mã theo quy tắc riêng
 
         public string FullName { get; set; }
 

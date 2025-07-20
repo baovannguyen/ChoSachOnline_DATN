@@ -11,8 +11,8 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<CommentDto> CreateAsync(CommentDto dto);
 
         Task<bool> DeleteAsync(string id);
-        // ❌ bỏ userId khỏi tham số
-
-    }
+		// ❌ bỏ userId khỏi tham số
+		Task<List<CommentDto>> GetAllCommentsAsync();
+	}
 
 }
