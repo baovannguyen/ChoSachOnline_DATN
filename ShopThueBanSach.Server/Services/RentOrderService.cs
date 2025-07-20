@@ -5,25 +5,163 @@ using ShopThueBanSach.Server.Entities;
 using ShopThueBanSach.Server.Models;
 using ShopThueBanSach.Server.Models.CartRentModel;
 using ShopThueBanSach.Server.Models.RentOrderModel;
+using ShopThueBanSach.Server.Models.Vnpay;
 using ShopThueBanSach.Server.Services.Interfaces;
+using ShopThueBanSach.Server.Services.Vnpay;
 using System.Text.Json;
 
 namespace ShopThueBanSach.Server.Services
 {
     public class RentOrderService : IRentOrderService
     {
-        private readonly AppDBContext _context;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IMoMoPaymentService _moMoPaymentService;
+		private readonly AppDBContext _context;
+		private readonly IHttpContextAccessor _httpContextAccessor;
+		private readonly IMoMoPaymentService _moMoPaymentService;
+		private readonly IVnPayService _vnPayService;
 
-        public RentOrderService(AppDBContext context, IHttpContextAccessor httpContextAccessor, IMoMoPaymentService momo)
-        {
-            _context = context;
-            _httpContextAccessor = httpContextAccessor;
-            _moMoPaymentService = momo;
-        }
+		public RentOrderService(AppDBContext context, IHttpContextAccessor httpContextAccessor, IMoMoPaymentService momo, IVnPayService vnPayService)
+		{
+			_context = context;
+			_httpContextAccessor = httpContextAccessor;
+			_moMoPaymentService = momo;
+			_vnPayService = vnPayService;
+		}
 
-        public async Task<IActionResult> CreateRentOrderWithCashAsync(RentOrderRequest request)
+		// [1] Tạo URL thanh toán VNPAY
+		public async Task<IActionResult> PrepareVnPayRentOrderAsync(RentOrderRequest request)
+		{
+			var result = await BuildOrderFromSessionCartAsync(request);
+			if (result is IActionResult error) return error;
+
+			var orderData = (RentOrderResult)result;
+
+			var paymentModel = new PaymentInformationRentModel
+			{
+				OrderType = "rent",
+				Amount = orderData.Order.TotalFee,
+				OrderDescription = $"Thanh toán đơn thuê sách lúc {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+				Name = orderData.Order.UserId,
+				UserId = orderData.Order.UserId,
+				ReturnUrl = _vnPayService.GetRentReturnUrl(), // bạn có thể tạo hàm GetRentReturnUrl() trả về từ config
+				CartItemsRent = orderData.Details.Select(x => new CartItemRent
+				{
+					RentBookItemId = x.RentBookItemId,
+					RentBookTitle = x.BookTitle,
+					BookPrice = x.BookPrice,
+					RentalFee = x.RentalFee,
+					TotalFee = x.TotalFee,
+					Condition = x.Condition
+				}).ToList()
+			};
+
+			var sessionData = new PaymentSessionModel
+			{
+				UserId = orderData.Order.UserId,
+				Amount = orderData.Order.TotalFee,
+				OrderDescription = paymentModel.OrderDescription,
+				RentItems = paymentModel.CartItemsRent,
+				StartDate = request.StartDate,
+				EndDate = request.EndDate,
+				Address = request.Address,
+				Phone = request.Phone,
+				HasShippingFee = request.HasShippingFee
+			};
+
+			_httpContextAccessor.HttpContext!.Session.SetString("VNPayRentSession", JsonSerializer.Serialize(sessionData));
+
+			var url = _vnPayService.CreatePaymentUrlForRent(paymentModel, _httpContextAccessor.HttpContext);
+			return new OkObjectResult(new { PaymentUrl = url });
+		}
+
+		// [2] Tạo đơn sau khi thanh toán VNPAY thành công
+		public async Task<IActionResult> CreateRentOrderAfterVnPayAsync(HttpContext context)
+		{
+			var session = context.Session;
+			var json = session.GetString("VNPayRentSession");
+
+			if (string.IsNullOrEmpty(json))
+				return new BadRequestObjectResult(new { success = false, message = "Không tìm thấy dữ liệu thanh toán trong session." });
+
+			var sessionData = JsonSerializer.Deserialize<PaymentSessionModel>(json);
+			if (sessionData == null)
+				return new BadRequestObjectResult(new { success = false, message = "Dữ liệu session không hợp lệ." });
+
+			var rentalDays = (sessionData.EndDate - sessionData.StartDate).Days;
+			if (rentalDays <= 0)
+				return new BadRequestObjectResult(new { success = false, message = "Ngày thuê không hợp lệ." });
+
+			const decimal shippingFee = 20000;
+			var orderId = Guid.NewGuid().ToString();
+			var orderDetails = new List<RentOrderDetail>();
+			decimal totalDeposit = 0;
+
+			foreach (var item in sessionData.RentItems)
+			{
+				var rentBookItem = await _context.RentBookItems
+					.Include(r => r.RentBook)
+					.FirstOrDefaultAsync(x => x.RentBookItemId == item.RentBookItemId);
+
+				if (rentBookItem == null || rentBookItem.RentBook == null || rentBookItem.Status != RentBookItemStatus.Available)
+					continue;
+
+				totalDeposit += rentBookItem.RentBook.Price;
+
+				orderDetails.Add(new RentOrderDetail
+				{
+					OrderId = orderId,
+					RentBookItemId = rentBookItem.RentBookItemId,
+					BookTitle = rentBookItem.RentBook.Title,
+					BookPrice = rentBookItem.RentBook.Price,
+					RentalFee = item.RentalFee,
+					TotalFee = item.TotalFee,
+					Condition = item.Condition
+				});
+
+				rentBookItem.Status = RentBookItemStatus.Rented;
+			}
+
+			if (!orderDetails.Any())
+				return new BadRequestObjectResult(new { success = false, message = "Không có sách hợp lệ để tạo đơn hàng." });
+
+			var order = new RentOrder
+			{
+				OrderId = orderId,
+				UserId = sessionData.UserId,
+				StartDate = sessionData.StartDate,
+				EndDate = sessionData.EndDate,
+				RentalDays = rentalDays,
+				HasShippingFee = sessionData.HasShippingFee,
+				ShippingFee = sessionData.HasShippingFee ? shippingFee : 0,
+				TotalDeposit = totalDeposit,
+				TotalFee = sessionData.Amount,
+				OrderDate = DateTime.Now,
+				Status = OrderStatus.Pending,
+				Payment = "VNPAY"
+			};
+
+			await _context.RentOrders.AddAsync(order);
+			await _context.RentOrderDetails.AddRangeAsync(orderDetails);
+			await _context.SaveChangesAsync();
+
+			session.Remove("VNPayRentSession");
+
+			return new OkObjectResult(new
+			{
+				success = true,
+				message = "Đơn thuê đã được tạo thành công sau khi thanh toán.",
+				order = new
+				{
+					order.OrderId,
+					order.TotalFee,
+					order.RentalDays,
+					order.ShippingFee,
+					order.TotalDeposit,
+					order.StartDate,
+					order.EndDate
+				}
+			});
+		}
+		public async Task<IActionResult> CreateRentOrderWithCashAsync(RentOrderRequest request)
         {
             var result = await BuildOrderFromSessionCartAsync(request);
             if (result is IActionResult error) return error;

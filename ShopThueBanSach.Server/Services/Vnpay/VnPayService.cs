@@ -77,5 +77,53 @@ collections,
 
 			return response;
 		}
+
+
+
+
+		public string CreatePaymentUrlForRent(PaymentInformationRentModel model, HttpContext context)
+		{
+			var tick = DateTime.Now.Ticks.ToString();
+			var txnRef = tick;
+
+			var paymentSession = new PaymentSessionModel
+			{
+				UserId = model.UserId,
+				Amount = model.Amount,
+				OrderDescription = model.OrderDescription,
+				RentItems = model.CartItemsRent,
+				Tick = tick
+			};
+
+			var sessionKey = $"OrderInfo_{txnRef}";
+			var sessionValue = System.Text.Json.JsonSerializer.Serialize(paymentSession);
+			context.Session.SetString(sessionKey, sessionValue);
+
+			var vnpay = new VnPayLibrary();
+			vnpay.AddRequestData("vnp_Version", _configuration["Vnpay:Version"]);
+			vnpay.AddRequestData("vnp_Command", _configuration["Vnpay:Command"]);
+			vnpay.AddRequestData("vnp_TmnCode", _configuration["Vnpay:TmnCode"]);
+			vnpay.AddRequestData("vnp_Amount", ((int)(model.Amount * 100)).ToString());
+			vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+			vnpay.AddRequestData("vnp_CurrCode", _configuration["Vnpay:CurrCode"]);
+			vnpay.AddRequestData("vnp_IpAddr", context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1");
+			vnpay.AddRequestData("vnp_Locale", _configuration["Vnpay:Locale"]);
+			vnpay.AddRequestData("vnp_OrderInfo", model.OrderDescription);
+			vnpay.AddRequestData("vnp_OrderType", model.OrderType);
+			vnpay.AddRequestData("vnp_ReturnUrl", string.IsNullOrEmpty(model.ReturnUrl)
+				? _configuration["Vnpay:RentReturnUrl"]
+				: model.ReturnUrl);
+			vnpay.AddRequestData("vnp_TxnRef", txnRef);
+
+			return vnpay.CreateRequestUrl(
+				_configuration["Vnpay:BaseUrl"],
+				_configuration["Vnpay:HashSecret"]
+			);
+		}
+
+		public string GetRentReturnUrl()
+		{
+			return _configuration["Vnpay:RentReturnUrl"];
+		}
 	}
 }

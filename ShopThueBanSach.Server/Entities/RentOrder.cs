@@ -30,7 +30,7 @@ namespace ShopThueBanSach.Server.Entities
         public decimal TotalFee { get; set; }
         public decimal TotalDeposit { get; set; }
 
-        public Payment? Payment { get; set; }
+        public string ? Payment { get; set; }
 
         public DateTime? ActualReturnDate { get; set; }
         public decimal? ActualRefundAmount { get; set; }

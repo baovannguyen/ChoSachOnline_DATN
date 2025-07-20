@@ -8,5 +8,7 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<IActionResult> CreateRentOrderWithCashAsync(RentOrderRequest request);
         Task<IActionResult> PrepareMoMoOrderAsync(RentOrderRequest request);
         Task CreateRentOrderAfterMoMoAsync(RentOrderRequest request);
-    }
+		Task<IActionResult> PrepareVnPayRentOrderAsync(RentOrderRequest request);
+		Task<IActionResult> CreateRentOrderAfterVnPayAsync(HttpContext httpContext);
+	}
 }

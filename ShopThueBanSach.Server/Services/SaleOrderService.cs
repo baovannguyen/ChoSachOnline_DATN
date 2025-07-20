@@ -38,16 +38,35 @@ namespace ShopThueBanSach.Server.Services
 
 		public async Task<string> PrepareVnPaySaleOrderAsync(SaleOrderRequest request, HttpContext httpContext)
 		{
-			// 1. Lấy giỏ hàng đã chọn
-			var selectedItems = _cartService.GetSelectedItems();
+			// 1. Lấy giỏ hàng đã chọn từ Session
+			var cartJson = httpContext.Session.GetString("SaleCart");
+			if (string.IsNullOrEmpty(cartJson))
+				throw new Exception("Giỏ hàng trống.");
 
-			if (selectedItems == null || !selectedItems.Any())
-				throw new Exception("Không có sản phẩm nào được chọn trong giỏ hàng.");
+			var cart = System.Text.Json.JsonSerializer.Deserialize<List<CartItemSale>>(cartJson);
+			if (cart == null || !cart.Any())
+				throw new Exception("Không có sản phẩm trong giỏ hàng.");
 
-			// 2. Tính tổng tiền
+			var selectedItems = cart
+				.Where(c => request.SelectedProductIds.Contains(c.ProductId))
+				.ToList();
+
+			if (!selectedItems.Any())
+				throw new Exception("Bạn chưa chọn sản phẩm nào để thanh toán.");
+
+			// 2. Tính tổng tiền sản phẩm
 			var total = selectedItems.Sum(x => x.UnitPrice * x.Quantity);
 
-			// 3. Tạo thông tin lưu session
+			// 3. Tính phí vận chuyển nếu có
+			const decimal shippingFee = 20000;
+			if (request.HasShippingFee)
+			{
+				if (string.IsNullOrWhiteSpace(request.Address) || string.IsNullOrWhiteSpace(request.Phone))
+					throw new Exception("Vui lòng nhập địa chỉ và số điện thoại để giao hàng.");
+				total += shippingFee;
+			}
+
+			// 4. Tạo thông tin lưu session
 			var sessionModel = new PaymentSessionModel
 			{
 				CartItems = selectedItems.Select(x => new CartItemSale
@@ -59,24 +78,28 @@ namespace ShopThueBanSach.Server.Services
 				}).ToList(),
 				UserId = request.UserId,
 				Amount = total,
-				OrderDescription = $"Thanh toán đơn hàng thuê sách lúc {DateTime.Now:yyyy-MM-dd HH:mm:ss}"
+				OrderDescription = $"Thanh toán đơn hàng thuê sách lúc {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+				HasShippingFee = request.HasShippingFee,
+				Address = request.Address,
+				Phone = request.Phone
 			};
 
-			// 4. Lưu vào Session
+			// 5. Lưu vào Session
 			httpContext.Session.SetString("VNPayOrderSession", System.Text.Json.JsonSerializer.Serialize(sessionModel));
 
-			// 5. Tạo thông tin thanh toán cho VNPay
+			// 6. Tạo thông tin thanh toán cho VNPay
 			var paymentInfo = new PaymentInformationModel
 			{
 				OrderType = "book_rental",
-				Amount = (decimal)total,
+				Amount = total,
 				OrderDescription = sessionModel.OrderDescription,
 				Name = request.UserId ?? "unknown"
 			};
 
-			// 6. Trả về URL thanh toán
+			// 7. Trả về URL thanh toán
 			return _vnPayService.CreatePaymentUrl(paymentInfo, httpContext);
 		}
+
 
 
 
@@ -93,43 +116,26 @@ namespace ShopThueBanSach.Server.Services
 			if (model == null || model.CartItems == null || !model.CartItems.Any())
 				return new BadRequestObjectResult("Không có sản phẩm trong đơn hàng.");
 
-			// 2. Tạo danh sách chi tiết đơn hàng
-			var details = model.CartItems.Select(item => new SaleOrderDetail
+			// 2. Tạo lại request để truyền vào hàm Build
+			var request = new SaleOrderRequest
 			{
-				ProductId = item.ProductId,
-				ProductName = item.ProductName,
-				Quantity = item.Quantity,
-				UnitPrice = item.UnitPrice,
-				SubTotal = item.Quantity * item.UnitPrice
-			}).ToList();
-
-			// 3. Tạo đơn hàng
-			var order = new SaleOrder
-			{
-				OrderId = Guid.NewGuid().ToString(),
 				UserId = model.UserId,
-				OrderDate = DateTime.UtcNow,
-				TotalAmount = model.Amount,
-				OriginalTotalAmount = model.Amount,
-				DiscountAmount = 0,
+				SelectedProductIds = model.CartItems.Select(c => c.ProductId).ToList(),
 				PaymentMethod = "VNPAY",
-				Status = OrderStatus.Pending,
-				HasShippingFee = false,
-				ShippingFee = 0
+				HasShippingFee = model.HasShippingFee,
+				Address = model.Address,
+				Phone = model.Phone,
+				VoucherCode = null // Không hỗ trợ mã giảm giá trong VNPay flow ở đây
 			};
 
-			foreach (var detail in details)
-				detail.OrderId = order.OrderId;
+			// 3. Tạo đơn từ giỏ hàng Session
+			var result = await BuildOrderFromSessionCartAsync(request);
+			if (result is IActionResult error) return error;
 
-			var result = new SaleOrderResult
-			{
-				Order = order,
-				Details = details,
-				VoucherCode = null
-			};
+			var orderResult = (SaleOrderResult)result;
 
 			// 4. Lưu đơn hàng và cập nhật hệ thống
-			await SaveOrderAsync(result);
+			await SaveOrderAsync(orderResult);
 
 			// 5. Xoá session
 			httpContext.Session.Remove("VNPayOrderSession");
@@ -138,7 +144,7 @@ namespace ShopThueBanSach.Server.Services
 			{
 				success = true,
 				message = "Thanh toán và tạo đơn hàng thành công",
-				orderId = order.OrderId
+				orderId = orderResult.Order.OrderId
 			});
 		}
 

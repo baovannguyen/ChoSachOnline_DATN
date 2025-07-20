@@ -6,6 +6,7 @@ namespace ShopThueBanSach.Server.Services.Vnpay
 	{
 		string CreatePaymentUrl(PaymentInformationModel model, HttpContext context);
 		PaymentResponseModel PaymentExecute(IQueryCollection collections);
-
+		string CreatePaymentUrlForRent(PaymentInformationRentModel model, HttpContext context);
+		string GetRentReturnUrl();
 	}
 }
