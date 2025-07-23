@@ -6,7 +6,9 @@ namespace ShopThueBanSach.Server.Models.Vnpay
 	public class PaymentSessionModel
 	{
 		public string? UserId { get; set; }
-		public List<CartItemRent>? RentItems { get; set; } // THÊM: Thuê
+
+		public List<CartItemRent>? RentItems { get; set; }
+	public string? UserName { get; set; }
 		public DateTime StartDate { get; set; }
 		public DateTime EndDate { get; set; }
 		public List<CartItemSale> CartItems { get; set; }
@@ -20,5 +22,6 @@ namespace ShopThueBanSach.Server.Models.Vnpay
 		public bool HasShippingFee { get; set; }
 		public string? Address { get; set; }
 		public string? Phone { get; set; }
+		public string? Voucher {  get; set; }
 	}
 }

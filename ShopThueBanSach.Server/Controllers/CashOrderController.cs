@@ -21,10 +21,21 @@ namespace ShopThueBanSach.Server.Controllers
 		[HttpPost("create")]
 		public async Task<IActionResult> CreateCashOrder([FromBody] RentOrderRequest request)
 		{
-			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (string.IsNullOrEmpty(userId)) return Unauthorized();
+			var user = User;
 
+			var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
+					  ?? user.FindFirstValue("sub");
+
+			var userName = user.FindFirstValue(ClaimTypes.Name)
+						 ?? user.FindFirstValue("name")
+						 ?? user.FindFirstValue("unique_name");
+
+			if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userName))
+				return Unauthorized("Không xác định được thông tin người dùng.");
+
+			// Gán thông tin người dùng vào request trước khi gọi service
 			request.UserId = userId;
+			request.UserName = userName;
 			return await _rentOrderService.CreateRentOrderWithCashAsync(request);
 		}
 
@@ -34,11 +45,21 @@ namespace ShopThueBanSach.Server.Controllers
 		[HttpPost("create-vnpay")]
 		public async Task<IActionResult> CreatePaymentVnPay([FromBody] RentOrderRequest request)
 		{
-			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (string.IsNullOrEmpty(userId))
-				return Unauthorized(new { success = false, message = "Chưa đăng nhập!" });
+			var user = User;
 
+			var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
+					  ?? user.FindFirstValue("sub");
+
+			var userName = user.FindFirstValue(ClaimTypes.Name)
+						 ?? user.FindFirstValue("name")
+						 ?? user.FindFirstValue("unique_name");
+
+			if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userName))
+				return Unauthorized("Không xác định được thông tin người dùng.");
+
+			// Gán thông tin người dùng vào request trước khi gọi service
 			request.UserId = userId;
+			request.UserName = userName;
 
 			try
 			{
@@ -66,7 +87,6 @@ namespace ShopThueBanSach.Server.Controllers
 		/// <summary>
 		/// Xử lý callback từ VNPAY sau khi thanh toán
 		/// </summary>
-
 		[HttpGet("payment-callback-vnpay")]
 		public async Task<IActionResult> PaymentCallbackVnpay()
 		{
@@ -84,7 +104,15 @@ namespace ShopThueBanSach.Server.Controllers
 					var result = await _rentOrderService.CreateRentOrderAfterVnPayAsync(HttpContext);
 
 					if (result is OkObjectResult ok && ok.Value is not null)
-						return ok; // ✅ Trả về JSON kết quả thành công
+					{
+						// Lấy OrderId để chuyển hướng
+						var orderObject = ok.Value;
+						var orderIdProperty = orderObject.GetType().GetProperty("OrderId");
+						var orderId = orderIdProperty?.GetValue(orderObject)?.ToString();
+
+						// ✅ Redirect về frontend
+						return Redirect($"http://localhost:5173/payment-success?status=success&orderId={orderId}");
+					}
 
 					return StatusCode(500, new
 					{
@@ -104,14 +132,8 @@ namespace ShopThueBanSach.Server.Controllers
 			}
 
 			// ❌ Trường hợp thanh toán thất bại
-			return Ok(new
-			{
-				success = false,
-				message = "Thanh toán thất bại",
-				code = vnpResponseCode,
-				txnRef = txnRef
-			});
-
+			return Redirect($"http://localhost:5173/payment-success?status=fail&orderId={txnRef}");
 		}
+
 	}
 }

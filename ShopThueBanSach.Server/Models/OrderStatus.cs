@@ -2,12 +2,14 @@
 {
     public enum OrderStatus
     {
-        Pending,
-        Confirmed,
-        Shipping,
-        Delivered,
-        Canceled,
-        Failed,
-        Overdue
-    }
+        Pending,// chờ xử lý
+        Confirmed,// đã xác nhận
+        Shipping,//đang giao
+		Completed,//hoàn thành
+		Renting,//đang thuê
+		Overdue,//quá hạn
+		Canceled//đã hủy
+
+
+	}
 }

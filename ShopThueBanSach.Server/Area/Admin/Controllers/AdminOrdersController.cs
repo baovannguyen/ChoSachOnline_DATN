@@ -75,12 +75,12 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
 
         // PUT: api/admin/rentorders/auto-overdue
         [HttpPut("auto-overdue")]
-        public async Task<IActionResult> AutoMarkOverdueOrders()
-        {
-            var count = await _orderService.AutoUpdateOverdueOrdersAsync();
-            return Ok($"Đã cập nhật {count} đơn hàng quá hạn.");
-        }
-    }
+		public async Task<IActionResult> UpdateOverdueOrders()
+		{
+			var updatedCount = await _orderService.AutoUpdateOverdueOrdersAsync();
+			return Ok(new { message = "Cập nhật thành công", totalUpdated = updatedCount });
+		}
+	}
 
     // DTO cho hoàn tất đơn hàng
     public class RentOrderCompleteRequest

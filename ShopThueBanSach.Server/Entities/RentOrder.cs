@@ -9,6 +9,7 @@ namespace ShopThueBanSach.Server.Entities
     {
         [Key]
         public string OrderId { get; set; } = Guid.NewGuid().ToString();
+        public string UserName { get; set; }
 
         public string UserId { get; set; }  // FK
 
@@ -31,8 +32,9 @@ namespace ShopThueBanSach.Server.Entities
         public decimal TotalDeposit { get; set; }
 
         public string ? Payment { get; set; }
-
-        public DateTime? ActualReturnDate { get; set; }
+		public string? Address { get; set; }
+		public string? Phone { get; set; }
+		public DateTime? ActualReturnDate { get; set; }
         public decimal? ActualRefundAmount { get; set; }
 
         public OrderStatus Status { get; set; } = OrderStatus.Pending;

@@ -10,6 +10,7 @@ namespace ShopThueBanSach.Server.Entities
         [Key]
         public string OrderId { get; set; } = Guid.NewGuid().ToString();
         public string UserId { get; set; } = null!;
+        public string? Username { get; set; }
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 		public string? Description { get; set; }
 		public OrderStatus Status { get; set; } = OrderStatus.Pending;

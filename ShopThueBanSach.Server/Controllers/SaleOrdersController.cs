@@ -26,12 +26,22 @@ namespace ShopThueBanSach.Server.Controllers
         public async Task<IActionResult> CreateOrderCash([FromBody] SaleOrderRequest request)
         {
 			var user = User;
-			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            request.UserId = userId;
+			var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
+					  ?? user.FindFirstValue("sub");
 
-            if (request.SelectedProductIds == null || !request.SelectedProductIds.Any())
+			var userName = user.FindFirstValue(ClaimTypes.Name)
+						 ?? user.FindFirstValue("name")
+						 ?? user.FindFirstValue("unique_name");
+
+			if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userName))
+				return Unauthorized("Không xác định được thông tin người dùng.");
+
+			// Gán thông tin người dùng vào request trước khi gọi service
+			request.UserId = userId;
+			request.Username = userName;
+
+			if (request.SelectedProductIds == null || !request.SelectedProductIds.Any())
                 return BadRequest("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
 
             try
@@ -44,44 +54,28 @@ namespace ShopThueBanSach.Server.Controllers
             }
         }
 
-        [Authorize]
-        [HttpPost("create-momo")]
-        public async Task<IActionResult> CreateOrderMoMo([FromBody] SaleOrderRequest request)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            request.UserId = userId;
-
-            if (request.SelectedProductIds == null || !request.SelectedProductIds.Any())
-                return BadRequest("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
-
-            try
-            {
-                return await _saleOrderService.PrepareMoMoSaleOrderAsync(request);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi tạo đơn hàng Momo", detail = ex.Message });
-            }
-        }
 
 
-        [HttpPost("momo/callback")]
-        [AllowAnonymous]
-        public async Task<IActionResult> MoMoCallback([FromBody] SaleOrderRequest request)
-        {
-            await _saleOrderService.CreateSaleOrderAfterMoMoAsync(request);
-            return Ok(new { message = "Xử lý đơn hàng MoMo thành công" });
-        }
+    
 		[Authorize]
 		[HttpPost("create-vnpay")]
 		public async Task<IActionResult> CreatePaymentVnPay([FromBody] SaleOrderRequest request)
 		{
-			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (string.IsNullOrEmpty(userId)) return Unauthorized();
+			var user = User;
 
+			var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
+					  ?? user.FindFirstValue("sub");
+
+			var userName = user.FindFirstValue(ClaimTypes.Name)
+						 ?? user.FindFirstValue("name")
+						 ?? user.FindFirstValue("unique_name");
+
+			if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userName))
+				return Unauthorized("Không xác định được thông tin người dùng.");
+
+			// Gán thông tin người dùng vào request trước khi gọi service
 			request.UserId = userId;
+			request.Username = userName;
 
 			try
 			{

@@ -32,7 +32,7 @@ namespace ShopThueBanSach.Server.Services
                 return new OkObjectResult("Thanh toán thành công");
             }
 
-            order.Status = Models.OrderStatus.Failed;
+            order.Status = Models.OrderStatus.Canceled;
             await _context.SaveChangesAsync();
             return new OkObjectResult("Thanh toán thất bại");
         }

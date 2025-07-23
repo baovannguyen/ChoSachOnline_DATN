@@ -55,10 +55,11 @@ namespace ShopThueBanSach.Server.Services
 				throw new Exception("Bạn chưa chọn sản phẩm nào để thanh toán.");
 
 			// 2. Tính tổng tiền sản phẩm
-			var total = selectedItems.Sum(x => x.UnitPrice * x.Quantity);
+			decimal totalProductPrice = selectedItems.Sum(x => x.UnitPrice * x.Quantity);
+			decimal total = totalProductPrice;
+			const decimal shippingFee = 20000;
 
 			// 3. Tính phí vận chuyển nếu có
-			const decimal shippingFee = 20000;
 			if (request.HasShippingFee)
 			{
 				if (string.IsNullOrWhiteSpace(request.Address) || string.IsNullOrWhiteSpace(request.Phone))
@@ -66,7 +67,31 @@ namespace ShopThueBanSach.Server.Services
 				total += shippingFee;
 			}
 
-			// 4. Tạo thông tin lưu session
+			// 4. Áp dụng mã giảm giá nếu có (trên cả sản phẩm + phí ship)
+			decimal discountAmount = 0;
+			if (!string.IsNullOrWhiteSpace(request.VoucherCode))
+			{
+				var voucher = await _context.Vouchers
+					.Include(v => v.DiscountCode)
+					.FirstOrDefaultAsync(v =>
+						v.Code == request.VoucherCode &&
+						v.UserId == request.UserId &&
+						!v.IsUsed);
+
+				if (voucher != null && voucher.DiscountCode != null)
+				{
+					var discountPercent = voucher.DiscountCode.DiscountValue;
+					discountAmount = total * (decimal)discountPercent / 100m;
+
+					if (discountAmount > total)
+						discountAmount = total;
+
+					total -= discountAmount; // ✅ Trừ vào tổng sau khi cộng phí ship
+				}
+			}
+
+
+			// 5. Tạo thông tin lưu session
 			var sessionModel = new PaymentSessionModel
 			{
 				CartItems = selectedItems.Select(x => new CartItemSale
@@ -77,26 +102,28 @@ namespace ShopThueBanSach.Server.Services
 					UnitPrice = x.UnitPrice
 				}).ToList(),
 				UserId = request.UserId,
+                UserName= request.Username,
 				Amount = total,
-				OrderDescription = $"Thanh toán đơn hàng thuê sách lúc {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+				OrderDescription = $"Thanh toán đơn hàng bán sách lúc {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
 				HasShippingFee = request.HasShippingFee,
 				Address = request.Address,
-				Phone = request.Phone
+				Phone = request.Phone,
+				Voucher = request.VoucherCode
 			};
 
-			// 5. Lưu vào Session
+			// 6. Lưu vào Session để callback dùng lại
 			httpContext.Session.SetString("VNPayOrderSession", System.Text.Json.JsonSerializer.Serialize(sessionModel));
 
-			// 6. Tạo thông tin thanh toán cho VNPay
+			// 7. Tạo thông tin thanh toán cho VNPay
 			var paymentInfo = new PaymentInformationModel
 			{
-				OrderType = "book_rental",
-				Amount = total,
+				OrderType = "book_sale", // hoặc "book_rental" nếu là đơn thuê
+				Amount = total, // ✅ Số tiền đã được trừ voucher
 				OrderDescription = sessionModel.OrderDescription,
 				Name = request.UserId ?? "unknown"
 			};
 
-			// 7. Trả về URL thanh toán
+			// 8. Trả về URL thanh toán VNPay
 			return _vnPayService.CreatePaymentUrl(paymentInfo, httpContext);
 		}
 
@@ -120,12 +147,13 @@ namespace ShopThueBanSach.Server.Services
 			var request = new SaleOrderRequest
 			{
 				UserId = model.UserId,
+				Username = model.UserName,
 				SelectedProductIds = model.CartItems.Select(c => c.ProductId).ToList(),
 				PaymentMethod = "VNPAY",
 				HasShippingFee = model.HasShippingFee,
 				Address = model.Address,
 				Phone = model.Phone,
-				VoucherCode = null // Không hỗ trợ mã giảm giá trong VNPay flow ở đây
+				VoucherCode = model.Voucher 
 			};
 
 			// 3. Tạo đơn từ giỏ hàng Session
@@ -164,35 +192,7 @@ namespace ShopThueBanSach.Server.Services
             });
         }
 
-        public async Task<IActionResult> PrepareMoMoSaleOrderAsync(SaleOrderRequest request)
-        {
-            var result = await BuildOrderFromSessionCartAsync(request);
-            if (result is IActionResult error) return error;
 
-            var orderResult = (SaleOrderResult)result;
-            var extraData = System.Text.Json.JsonSerializer.Serialize(request);
-
-            var payUrl = await _moMoPaymentService.CreatePaymentUrlAsync(
-                orderId: orderResult.Order.OrderId,
-                amount: orderResult.Order.TotalAmount,
-                returnUrl: "https://localhost:7003/momo-return",
-                notifyUrl: "https://localhost:7003/api/momoorder/callback",
-                extraData: extraData
-            );
-
-            return new OkObjectResult(new
-            {
-                Message = "Chuyển hướng đến MoMo",
-                PaymentUrl = payUrl
-            });
-        }
-
-        public async Task CreateSaleOrderAfterMoMoAsync(SaleOrderRequest request)
-        {
-            var result = await BuildOrderFromSessionCartAsync(request);
-            if (result is not SaleOrderResult orderResult) return;
-            await SaveOrderAsync(orderResult);
-        }
 
         private async Task<object> BuildOrderFromSessionCartAsync(SaleOrderRequest request)
         {
@@ -279,7 +279,8 @@ namespace ShopThueBanSach.Server.Services
             {
                 OrderId = Guid.NewGuid().ToString(),
                 UserId = request.UserId,
-                OrderDate = DateTime.Now,
+                Username = request.Username,
+				OrderDate = DateTime.Now,
                 PaymentMethod = request.PaymentMethod,
 				OriginalTotalAmount = totalAmount,
                 DiscountAmount = discountAmount,
@@ -310,7 +311,8 @@ namespace ShopThueBanSach.Server.Services
 
             var session = context.Session;
             var cartJson = session.GetString("SaleCart");
-            if (!string.IsNullOrEmpty(cartJson))
+		
+			if (!string.IsNullOrEmpty(cartJson))
             {
                 var cart = JsonConvert.DeserializeObject<List<CartItemSale>>(cartJson);
                 var remaining = cart?.Where(x => !result.Details.Any(d => d.ProductId == x.ProductId)).ToList();

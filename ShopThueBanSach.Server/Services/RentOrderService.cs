@@ -57,6 +57,7 @@ namespace ShopThueBanSach.Server.Services
 			var sessionData = new PaymentSessionModel
 			{
 				UserId = orderData.Order.UserId,
+                UserName = orderData.Order.UserName,
 				Amount = orderData.Order.TotalFee,
 				OrderDescription = paymentModel.OrderDescription,
 				RentItems = paymentModel.CartItemsRent,
@@ -127,6 +128,9 @@ namespace ShopThueBanSach.Server.Services
 			{
 				OrderId = orderId,
 				UserId = sessionData.UserId,
+                UserName = sessionData.UserName,
+                Address = sessionData.Address,
+                Phone = sessionData.Phone,
 				StartDate = sessionData.StartDate,
 				EndDate = sessionData.EndDate,
 				RentalDays = rentalDays,
@@ -224,7 +228,7 @@ namespace ShopThueBanSach.Server.Services
             int rentalDays = (request.EndDate - request.StartDate).Days;
             if (rentalDays <= 0) return new BadRequestObjectResult("Ngày thuê không hợp lệ");
 
-            const decimal baseRentalFee = 30000;
+            const decimal baseRentalFee = 20000;
             const int baseRentalDays = 60;
             const decimal extraFeePerDay = 1000;
             const decimal shippingFee = 20000;
@@ -282,6 +286,9 @@ namespace ShopThueBanSach.Server.Services
             {
                 OrderId = orderId,
                 UserId = request.UserId,
+                UserName = request.UserName,
+                Address = request.Address,
+                Phone = request.Phone,
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 RentalDays = rentalDays,

@@ -83,81 +83,88 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             return true;
         }
 
-        //Hoàn tất đơn thuê
-        public async Task<bool> CompleteRentOrderAsync(
-            string orderId,
-            DateTime actualReturnDate,
-            Dictionary<int, int> updatedConditions)
-        {
-            var order = await _context.RentOrders
-                .FirstOrDefaultAsync(o => o.OrderId == orderId);
-            if (order == null) return false;
+		//Hoàn tất đơn thuê
+		public async Task<bool> CompleteRentOrderAsync(
+	  string orderId,
+	  DateTime actualReturnDate,
+	  Dictionary<int, int> updatedConditions)
+		{
+			var order = await _context.RentOrders
+				.FirstOrDefaultAsync(o => o.OrderId == orderId);
+			if (order == null) return false;
 
-            var details = await _context.RentOrderDetails
-                .Where(d => d.OrderId == orderId)
-                .Include(d => d.RentBookItem)
-                .ToListAsync();
+			var details = await _context.RentOrderDetails
+				.Where(d => d.OrderId == orderId)
+				.Include(d => d.RentBookItem)
+				.ToListAsync();
+			if (!details.Any()) return false;
 
-            if (!details.Any()) return false;
+			decimal totalRefund = 0;
+			int lateDays = (actualReturnDate - order.EndDate).Days;
+			lateDays = lateDays > 0 ? lateDays : 0;
 
-            decimal totalRefund = 0;
-            int lateDays = (actualReturnDate - order.EndDate).Days;
-            decimal lateFee = lateDays > 0 ? lateDays * 2000 : 0;
+			foreach (var detail in details)
+			{
+				if (!updatedConditions.TryGetValue(detail.Id, out int returnedCondition))
+					continue;
 
-            foreach (var detail in details)
-            {
-                if (!updatedConditions.TryGetValue(detail.Id, out int returnedCondition))
-                    continue;
+				detail.ActualReturnDate = actualReturnDate;
+				detail.ReturnCondition = returnedCondition;
 
-                detail.ActualReturnDate = actualReturnDate;
-                detail.ReturnCondition = returnedCondition;
+				int lostCondition = detail.Condition - returnedCondition;
+				if (lostCondition < 0) lostCondition = 0;
 
-                int lostCondition = detail.Condition - returnedCondition;
-                if (lostCondition < 0) lostCondition = 0;
+				// Tính phí
+				decimal lateFee = lateDays * 3000;
+				decimal damageFee = (lostCondition / 100m) * detail.BookPrice;
+				decimal totalPenalty = lateFee + damageFee;
 
-                decimal damageFee = lostCondition >= 10 ? 3000 : 0;
+				// Nếu trễ > 60 ngày hoặc thiệt hại > 40 => không hoàn cọc
+				bool forfeitDeposit = lateDays > 60 || lostCondition > 40;
+				decimal refund = forfeitDeposit ? 0 : Math.Max(detail.BookPrice - totalPenalty, 0);
 
-                decimal refund = detail.BookPrice - lateFee - damageFee;
-                if (refund < 0) refund = 0;
+				detail.ActualRefundAmount = refund;
+				totalRefund += refund;
 
-                detail.ActualRefundAmount = refund;
-                totalRefund += refund;
+				if (detail.RentBookItem != null)
+				{
+					detail.RentBookItem.Status = RentBookItemStatus.Available;
+					detail.RentBookItem.Condition = returnedCondition;
+				}
+			}
 
-                if (detail.RentBookItem != null)
-                {
-                    detail.RentBookItem.Status = RentBookItemStatus.Available;
-                    detail.RentBookItem.Condition = returnedCondition;
-                }
-            }
+			order.Status = OrderStatus.Completed;
+			order.ActualReturnDate = actualReturnDate;
+			order.ActualRefundAmount = totalRefund;
 
-            // Gán tổng refund vào đơn hàng
-            order.Status = OrderStatus.Delivered;
-            order.ActualReturnDate = actualReturnDate;
-            order.ActualRefundAmount = totalRefund;
+			await _context.SaveChangesAsync();
+			return true;
+		}
 
 
-            await _context.SaveChangesAsync();
-            return true;
-        }
+		//Tự động cập nhật đơn quá hạn
+		public async Task<int> AutoUpdateOverdueOrdersAsync()
+		{
+			var today = DateTime.Now;
 
-        //Tự động cập nhật đơn quá hạn
-        public async Task<int> AutoUpdateOverdueOrdersAsync()
-        {
-            var today = DateTime.Now;
+			var overdueOrders = await _context.RentOrders
+				.Where(o => o.Status != OrderStatus.Pending
+						 && o.Status != OrderStatus.Confirmed
+						 && o.Status != OrderStatus.Canceled
+						 && o.Status != OrderStatus.Completed
+						 && o.EndDate < today)
+				.ToListAsync();
 
-            var overdueOrders = await _context.RentOrders
-                .Where(o => o.Status != OrderStatus.Delivered
-                         && o.Status != OrderStatus.Canceled
-                         && o.EndDate < today)
-                .ToListAsync();
+			int updatedCount = 0;
 
-            foreach (var order in overdueOrders)
-            {
-                order.Status = OrderStatus.Overdue;
-            }
+			foreach (var order in overdueOrders)
+			{
+				bool updated = await UpdateRentOrderStatusAsync(order.OrderId, OrderStatus.Overdue);
+				if (updated) updatedCount++;
+			}
 
-            await _context.SaveChangesAsync();
-            return overdueOrders.Count;
-        }
-    }
+			return updatedCount;
+		}
+
+	}
 }
