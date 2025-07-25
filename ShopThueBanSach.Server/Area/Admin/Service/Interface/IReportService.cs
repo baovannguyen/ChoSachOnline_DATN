@@ -48,11 +48,11 @@ namespace ShopThueBanSach.Server.Area.Admin.Service.Interface
 
         Task SetMonthlyRentDateAsync(int year, int month);
         Task SetYearlyRentDateAsync(int year);
-		//Xuất file excel
-		Task<byte[]> ExportSaleReportToExcelAsync(DateTime? fromDate, DateTime? toDate);
-		Task<byte[]> ExportRentReportToExcelAsync(DateTime? fromDate, DateTime? toDate);
+        //Xuất file excel
+        Task<byte[]> ExportSaleReportToExcelAsync(DateTime? fromDate, DateTime? toDate);
+        Task<byte[]> ExportRentReportToExcelAsync(DateTime? fromDate, DateTime? toDate);
 
 
 
-	}
+    }
 }
