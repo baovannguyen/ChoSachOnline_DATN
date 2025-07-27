@@ -123,7 +123,6 @@ namespace ShopThueBanSach.Server.Services
                 AuthorSaleBooks = dto.AuthorIds.Select(aid => new AuthorSaleBook { AuthorId = aid }).ToList(),
                 CategorySaleBooks = dto.CategoryIds.Select(cid => new CategorySaleBook { CategoryId = cid }).ToList()
             };
-
             // Lưu ảnh
             if (dto.ImageUrl != null && dto.ImageUrl.Length > 0)
             {
