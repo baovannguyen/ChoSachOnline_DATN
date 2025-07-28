@@ -4,9 +4,16 @@ namespace ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Yearly
 {
     public class YearlySaleBookStatisticsDto
     {
-        public List<DateTime> CreatedDates { get; set; } = new();
-        public int OrdersThisYear { get; set; }
-        public decimal TotalValueThisYear { get; set; }
-        public List<OrderStatus> Statuses { get; set; } = new();
+        public int Year { get; set; }
+        public List<YearlySaleMonthDataDto> MonthlyData { get; set; } = new();
     }
+
+    public class YearlySaleMonthDataDto
+    {
+        public int Month { get; set; }
+        public int Orders { get; set; }
+        public decimal TotalValue { get; set; }
+        public List<DateTime> CreatedDates { get; set; } = new();
+    }
+
 }

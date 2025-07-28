@@ -22,6 +22,8 @@ namespace ShopThueBanSach.Server.Entities
         public decimal OriginalTotalAmount { get; set; }
 		public string? PaymentMethod { get; set; }
 		public decimal TotalAmount { get; set; }
+        public User User { get; set; } // hoặc tên entity tương ứng với khách hàng
+
         [NotMapped]
         public List<SaleOrderDetail> Details { get; set; } = new();
         [JsonIgnore]

@@ -1,13 +1,13 @@
-﻿using ShopThueBanSach.Server.Models;
-
-namespace ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Monthly
+﻿public class MonthlyRentBookStatisticsDto
 {
-    public class MonthlyRentBookStatisticsDto
-    {
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public List<RentDayDataDto> DailyData { get; set; } = new();
+}
 
-        public List<DateTime> ActualReturnDates { get; set; }
-        public int OrdersThisMonth { get; set; }
-        public decimal TotalValueThisMonth { get; set; }
-        public List<OrderStatus> Statuses { get; set; } = new(); // Thêm dòng này
-    }
+public class RentDayDataDto
+{
+    public DateTime Date { get; set; }
+    public int OrderCount { get; set; }
+    public decimal TotalValue { get; set; }
 }

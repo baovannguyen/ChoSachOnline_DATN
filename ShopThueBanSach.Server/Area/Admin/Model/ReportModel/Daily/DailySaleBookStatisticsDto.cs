@@ -8,5 +8,6 @@ namespace ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Daily
         public int OrdersToday { get; set; }
         public decimal TotalValueToday { get; set; }
         public List<OrderStatus> Statuses { get; set; } = new();
+        public List<SaleOrderInDayDto> Orders { get; set; } = new(); // ✅ Thêm dòng này
     }
 }

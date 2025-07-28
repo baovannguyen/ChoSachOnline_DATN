@@ -36,38 +36,41 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             if (fromDate.HasValue && toDate.HasValue)
             {
                 if (fromDate.Value > toDate.Value)
-                {
                     throw new ArgumentException("Ngày bắt đầu không thể lớn hơn ngày kết thúc.");
-                }
 
                 if (fromDate.Value == DateTime.Today || toDate.Value == DateTime.Today)
-                {
                     throw new ArgumentException("Ngày không hợp lệ.");
-                }
             }
 
             var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Báo cáo bán sách");
 
-            // Header
-            worksheet.Cell(1, 1).Value = "STT";
-            worksheet.Cell(1, 2).Value = "Mã đơn hàng";
-            worksheet.Cell(1, 3).Value = "Ngày đặt";
-            worksheet.Cell(1, 4).Value = "Khách hàng";
-            worksheet.Cell(1, 5).Value = "Số lượng sách";
-            worksheet.Cell(1, 6).Value = "Tổng tiền";
-            worksheet.Cell(1, 7).Value = "Phí vận chuyển"; // Thêm cột phí vận chuyển
-            worksheet.Cell(1, 8).Value = "Giảm giá"; // Thêm cột giảm giá
+            // 1. Thời gian xuất file - Hàng 1
+            worksheet.Cell(1, 1).Value = $"Thời gian xuất file: {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
+            worksheet.Range(1, 1, 1, 8).Merge();
+            worksheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            // Ghi thời gian xuất file
-            worksheet.Cell(2, 1).Value = $"Thời gian xuất file: {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
-            worksheet.Range(2, 1, 2, 8).Merge(); // Gộp ô từ A2 đến H2
-            worksheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Canh giữa
+            // 2. Khoảng thời gian lọc - Hàng 2
+            var fromStr = fromDate.HasValue ? fromDate.Value.ToString("dd/MM/yyyy") : "Không xác định";
+            var toStr = toDate.HasValue ? toDate.Value.ToString("dd/MM/yyyy") : "Không xác định";
+            worksheet.Cell(2, 1).Value = $"Khoảng thời gian lọc: {fromStr} - {toStr}";
+            worksheet.Range(2, 1, 2, 8).Merge();
+            worksheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            // Query data
+            // 3. Header - Hàng 3
+            worksheet.Cell(3, 1).Value = "STT";
+            worksheet.Cell(3, 2).Value = "Mã đơn hàng";
+            worksheet.Cell(3, 3).Value = "Ngày bán";
+            worksheet.Cell(3, 4).Value = "Khách hàng";
+            worksheet.Cell(3, 5).Value = "Số lượng sách";
+            worksheet.Cell(3, 6).Value = "Tổng tiền";
+            worksheet.Cell(3, 7).Value = "Phí vận chuyển";
+            worksheet.Cell(3, 8).Value = "Giảm giá";
+
+            // 4. Truy vấn dữ liệu
             var query = _context.SaleOrders
                 .Include(o => o.SaleOrderDetails)
-                .Where(o => o.Status != OrderStatus.Canceled);
+                .Where(o => o.Status == OrderStatus.Completed);
 
             if (fromDate.HasValue)
                 query = query.Where(o => o.OrderDate >= fromDate.Value);
@@ -77,72 +80,77 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
 
             var orders = await query.ToListAsync();
 
-            // Fill data
+            // 5. Ghi dữ liệu - bắt đầu từ hàng 4
             for (int i = 0; i < orders.Count; i++)
             {
-                var row = i + 3; // Bắt đầu từ hàng 3
+                var row = i + 4;
                 var order = orders[i];
 
                 worksheet.Cell(row, 1).Value = i + 1;
-                worksheet.Cell(row, 2).Value = order.OrderId; // Sử dụng OrderId
+                worksheet.Cell(row, 2).Value = order.OrderId;
                 worksheet.Cell(row, 3).Value = order.OrderDate.ToString("dd/MM/yyyy");
-                worksheet.Cell(row, 4).Value = order.UserId; // Giả sử UserId là tên khách hàng
+                worksheet.Cell(row, 4).Value = order.UserId; // Nếu cần hiển thị tên, thay bằng order.User?.UserName
                 worksheet.Cell(row, 5).Value = order.SaleOrderDetails.Sum(d => d.Quantity);
                 worksheet.Cell(row, 6).Value = order.TotalAmount;
-                worksheet.Cell(row, 7).Value = order.HasShippingFee ? order.ShippingFee : 0; // Phí vận chuyển
-                worksheet.Cell(row, 8).Value = order.DiscountAmount; // Giảm giá
+                worksheet.Cell(row, 7).Value = order.HasShippingFee ? order.ShippingFee : 0;
+                worksheet.Cell(row, 8).Value = order.DiscountAmount;
             }
 
-            // Format currency
+            // 6. Format tiền tệ
             worksheet.Column(6).Style.NumberFormat.Format = "#,##0";
-            worksheet.Column(7).Style.NumberFormat.Format = "#,##0"; // Định dạng phí vận chuyển
-            worksheet.Column(8).Style.NumberFormat.Format = "#,##0"; // Định dạng giảm giá
+            worksheet.Column(7).Style.NumberFormat.Format = "#,##0";
+            worksheet.Column(8).Style.NumberFormat.Format = "#,##0";
 
-            // Auto fit columns
+            // 7. Tự động điều chỉnh độ rộng cột
             worksheet.Columns().AdjustToContents();
 
-            // Save to memory stream
+            // 8. Ghi ra stream
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
             return stream.ToArray();
         }
-
 
         public async Task<byte[]> ExportRentReportToExcelAsync(DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate.HasValue && toDate.HasValue)
             {
                 if (fromDate.Value > toDate.Value)
-                {
                     throw new ArgumentException("Ngày bắt đầu không thể lớn hơn ngày kết thúc.");
-                }
 
                 if (fromDate.Value == DateTime.Today || toDate.Value == DateTime.Today)
-                {
                     throw new ArgumentException("Ngày không hợp lệ.");
-                }
             }
+
             var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Báo cáo thuê sách");
 
-            // Header
-            worksheet.Cell(1, 1).Value = "STT";
-            worksheet.Cell(1, 2).Value = "Mã đơn hàng";
-            worksheet.Cell(1, 3).Value = "Ngày đặt";
-            worksheet.Cell(1, 4).Value = "Khách hàng";
-            worksheet.Cell(1, 5).Value = "Số lượng sách";
-            worksheet.Cell(1, 6).Value = "Tổng tiền";
-            worksheet.Cell(1, 7).Value = "Phí vận chuyển"; // Thêm cột phí vận chuyển
+            // 1. Thời gian xuất file - Hàng 1
+            worksheet.Cell(1, 1).Value = $"Thời gian xuất file: {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
+            worksheet.Range(1, 1, 1, 8).Merge();
+            worksheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            // Ghi thời gian xuất file
-            worksheet.Cell(2, 1).Value = $"Thời gian xuất file: {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
-            worksheet.Range(2, 1, 2, 7).Merge(); // Gộp ô từ A2 đến G2
-            worksheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Canh giữa
+            // 2. Khoảng thời gian lọc - Hàng 2
+            var fromDateStr = fromDate.HasValue ? fromDate.Value.ToString("dd/MM/yyyy") : "Không xác định";
+            var toDateStr = toDate.HasValue ? toDate.Value.ToString("dd/MM/yyyy") : "Không xác định";
+            worksheet.Cell(2, 1).Value = $"Khoảng thời gian lọc: {fromDateStr} - {toDateStr}";
+            worksheet.Range(2, 1, 2, 8).Merge();
+            worksheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            // Query data
+            // 3. Header - Hàng 3
+            worksheet.Cell(3, 1).Value = "STT";
+            worksheet.Cell(3, 2).Value = "Mã đơn hàng";
+            worksheet.Cell(3, 3).Value = "Ngày thuê";
+            worksheet.Cell(3, 4).Value = "Ngày trả thực tế";
+            worksheet.Cell(3, 5).Value = "Khách hàng";
+            worksheet.Cell(3, 6).Value = "Số lượng sách";
+            worksheet.Cell(3, 7).Value = "Tổng tiền";
+            worksheet.Cell(3, 8).Value = "Phí vận chuyển";
+            
+
+            // 4. Truy vấn dữ liệu
             var query = _context.RentOrders
                 .Include(o => o.RentOrderDetails)
-                .Where(o => o.Status != OrderStatus.Canceled);
+                .Where(o => o.Status == OrderStatus.Completed);
 
             if (fromDate.HasValue)
                 query = query.Where(o => o.OrderDate >= fromDate.Value);
@@ -152,33 +160,38 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
 
             var orders = await query.ToListAsync();
 
-            // Fill data
+            // 5. Ghi dữ liệu - bắt đầu từ hàng 4
             for (int i = 0; i < orders.Count; i++)
             {
-                var row = i + 3; // Bắt đầu từ hàng 3
+                var row = i + 4;
                 var order = orders[i];
 
                 worksheet.Cell(row, 1).Value = i + 1;
-                worksheet.Cell(row, 2).Value = order.OrderId; // Sử dụng OrderId
+                worksheet.Cell(row, 2).Value = order.OrderId;
                 worksheet.Cell(row, 3).Value = order.OrderDate.ToString("dd/MM/yyyy");
-                worksheet.Cell(row, 4).Value = order.UserId; // Giả sử UserId là tên khách hàng
-                worksheet.Cell(row, 5).Value = order.RentOrderDetails.Count; // Số lượng sách
-                worksheet.Cell(row, 6).Value = order.TotalFee; // Tổng tiền
-                worksheet.Cell(row, 7).Value = order.HasShippingFee ? order.ShippingFee : 0; // Phí vận chuyển
+                 worksheet.Cell(row, 4).Value = order.ActualReturnDate.HasValue
+                    ? order.ActualReturnDate.Value.ToString("dd/MM/yyyy")
+                    : "Chưa trả";
+                worksheet.Cell(row, 5).Value = order.User?.UserName ?? order.UserId;
+                worksheet.Cell(row, 6).Value = order.RentOrderDetails.Count;
+                worksheet.Cell(row, 7).Value = order.TotalFee;
+                worksheet.Cell(row, 8).Value = order.HasShippingFee ? order.ShippingFee : 0;
+               
             }
 
-            // Format currency
-            worksheet.Column(6).Style.NumberFormat.Format = "#,##0"; // Định dạng tổng tiền
-            worksheet.Column(7).Style.NumberFormat.Format = "#,##0"; // Định dạng phí vận chuyển
+            // 6. Định dạng cột tiền
+            worksheet.Column(6).Style.NumberFormat.Format = "#,##0";
+            worksheet.Column(7).Style.NumberFormat.Format = "#,##0";
 
-            // Auto fit columns
+            // 7. Tự động điều chỉnh độ rộng cột
             worksheet.Columns().AdjustToContents();
 
-            // Save to memory stream
+            // 8. Ghi ra memory stream
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
             return stream.ToArray();
         }
+
 
         /*  public async Task<byte[]> ExportSaleReportToPdfAsync(DateTime? fromDate, DateTime? toDate)
 		  {
@@ -410,44 +423,64 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                 ? cachedDate
                 : DateTime.Today;
 
-            var saleOrders = _context.SaleOrders
+            var saleOrders = await _context.SaleOrders
                 .AsNoTracking()
-                .Where(o => o.Status == OrderStatus.Completed && o.OrderDate.Date == selectedDate);
+                .Where(o => o.Status == OrderStatus.Completed && o.OrderDate.Date == selectedDate)
+                .ToListAsync();
+
+            var ordersDetail = saleOrders.Select(o => new SaleOrderInDayDto
+            {
+                OrderId = o.OrderId,
+                UserId = o.UserId,
+                CreatedDate = o.OrderDate,
+                TotalValue = o.TotalAmount
+            }).ToList();
 
             return new DailySaleBookStatisticsDto
             {
                 CreatedDate = selectedDate,
-                OrdersToday = await saleOrders.CountAsync(),
-                TotalValueToday = await saleOrders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0
+                OrdersToday = saleOrders.Count,
+                TotalValueToday = saleOrders.Sum(o => o.TotalAmount),
+                Statuses = saleOrders.Select(o => o.Status).Distinct().ToList(),
+                Orders = ordersDetail
             };
         }
 
+
         public async Task<MonthlySaleBookStatisticsDto> GetMonthlySaleBookStatisticsAsync()
         {
-            var (year, month) = _cache.TryGetValue("MonthlySaleDate", out ValueTuple<int, int> yAndM)
-                ? yAndM
+            var (year, month) = _cache.TryGetValue("MonthlySaleDate", out ValueTuple<int, int> cached)
+                ? cached
                 : (DateTime.Today.Year, DateTime.Today.Month);
 
-            var saleOrders = await _context.SaleOrders
-                .AsNoTracking()
-                .Where(o => o.Status == OrderStatus.Completed &&
-                            o.OrderDate.Year == year &&
-                            o.OrderDate.Month == month)
-                .ToListAsync();
+            var saleOrders = await GetSaleOrdersByMonthAsync(year, month);
 
-            var createdDates = saleOrders
-                .Select(o => o.OrderDate.Date)
-                .Distinct()
-                .OrderBy(d => d)
+            // 👉 Lọc chỉ các đơn đã hoàn thành
+            var completedOrders = saleOrders
+                .Where(o => o.Status == OrderStatus.Completed)
+                .ToList();
+
+            var dailyGroups = completedOrders
+                .GroupBy(o => o.OrderDate.Date)
+                .Select(g => new SaleDayDataDto
+                {
+                    Date = g.Key,
+                    OrderCount = g.Count(),
+                    TotalValue = g.Sum(o => o.TotalAmount)
+                })
+                .OrderBy(d => d.Date)
                 .ToList();
 
             return new MonthlySaleBookStatisticsDto
             {
-                CreatedDates = createdDates,
-                OrdersThisMonth = saleOrders.Count,
-                TotalValueThisMonth = saleOrders.Sum(o => o.TotalAmount)
+                Year = year,
+                Month = month,
+                DailyData = dailyGroups
             };
         }
+
+
+
 
         public async Task<YearlySaleBookStatisticsDto> GetYearlySaleBookStatisticsAsync()
         {
@@ -460,17 +493,31 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                 .Where(o => o.Status == OrderStatus.Completed && o.OrderDate.Year == year)
                 .ToListAsync();
 
-            var createdDates = saleOrders
-                .Select(o => o.OrderDate.Date)
-                .Distinct()
-                .OrderBy(d => d)
-                .ToList();
+            var monthlyData = new List<YearlySaleMonthDataDto>();
+
+            for (int month = 1; month <= 12; month++)
+            {
+                var monthOrders = saleOrders
+                    .Where(o => o.OrderDate.Month == month)
+                    .ToList();
+
+                monthlyData.Add(new YearlySaleMonthDataDto
+                {
+                    Month = month,
+                    Orders = monthOrders.Count,
+                    TotalValue = monthOrders.Sum(o => o.TotalAmount),
+                    CreatedDates = monthOrders
+                        .Select(o => o.OrderDate.Date)
+                        .Distinct()
+                        .OrderBy(d => d)
+                        .ToList()
+                });
+            }
 
             return new YearlySaleBookStatisticsDto
             {
-                CreatedDates = createdDates,
-                OrdersThisYear = saleOrders.Count,
-                TotalValueThisYear = saleOrders.Sum(o => o.TotalAmount)
+                Year = year,
+                MonthlyData = monthlyData
             };
         }
 
@@ -516,50 +563,66 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                 ? cachedDate
                 : DateTime.Today;
 
-            var rentOrders = _context.RentOrders
+            var rentOrders = await _context.RentOrders
                 .AsNoTracking()
                 .Where(o => o.Status == OrderStatus.Completed &&
                             o.ActualReturnDate.HasValue &&
-                            o.ActualReturnDate.Value.Date == selectedDate);
+                            o.ActualReturnDate.Value.Date == selectedDate)
+                .ToListAsync();
+
+            var ordersDetail = rentOrders.Select(o => new RentOrderInDayDto
+            {
+                OrderId = o.OrderId,
+                UserId = o.UserId,
+                ActualReturnDate = o.ActualReturnDate!.Value,
+                TotalValue = o.TotalFee - (o.ActualRefundAmount ?? 0)
+            }).ToList();
 
             return new DailyRentBookStatisticsDto
             {
                 ActualReturnDate = selectedDate,
-                OrdersToday = await rentOrders.CountAsync(),
-                TotalValueToday = await rentOrders.SumAsync(o => (decimal?)o.TotalFee - (o.ActualRefundAmount ?? 0)) ?? 0,
-                Statuses = await rentOrders.Select(o => o.Status).Distinct().ToListAsync()
+                OrdersToday = rentOrders.Count,
+                TotalValueToday = rentOrders.Sum(o => o.TotalFee - (o.ActualRefundAmount ?? 0)),
+                Statuses = rentOrders.Select(o => o.Status).Distinct().ToList(),
+                Orders = ordersDetail
             };
         }
 
+
         public async Task<MonthlyRentBookStatisticsDto> GetMonthlyRentBookStatisticsAsync()
         {
-            if (!_cache.TryGetValue("MonthlyRentDate", out (int year, int month) selectedDate))
-            {
-                selectedDate = (DateTime.Today.Year, DateTime.Today.Month);
-            }
+            // Lấy năm và tháng từ cache
+            var (year, month) = _cache.TryGetValue("MonthlyRentDate", out (int year, int month) cached)
+                ? cached
+                : (DateTime.Today.Year, DateTime.Today.Month);
 
             var rentOrders = await _context.RentOrders
                 .AsNoTracking()
                 .Where(o => o.Status == OrderStatus.Completed &&
                             o.ActualReturnDate.HasValue &&
-                            o.ActualReturnDate.Value.Year == selectedDate.year &&
-                            o.ActualReturnDate.Value.Month == selectedDate.month)
+                            o.ActualReturnDate.Value.Year == year &&
+                            o.ActualReturnDate.Value.Month == month)
                 .ToListAsync();
 
-            var returnDates = rentOrders
-                .Select(o => o.ActualReturnDate!.Value.Date)
-                .Distinct()
-                .OrderBy(d => d)
+            var dailyData = rentOrders
+                .GroupBy(o => o.ActualReturnDate!.Value.Date)
+                .Select(g => new RentDayDataDto
+                {
+                    Date = g.Key,
+                    OrderCount = g.Count(),
+                    TotalValue = g.Sum(o => o.TotalFee - (o.ActualRefundAmount ?? 0))
+                })
+                .OrderBy(d => d.Date)
                 .ToList();
 
             return new MonthlyRentBookStatisticsDto
             {
-                ActualReturnDates = returnDates,
-                OrdersThisMonth = rentOrders.Count,
-                TotalValueThisMonth = rentOrders.Sum(o => o.TotalFee - (o.ActualRefundAmount ?? 0)),
-                Statuses = rentOrders.Select(o => o.Status).Distinct().ToList()
+                Year = year,
+                Month = month,
+                DailyData = dailyData
             };
         }
+
 
 
         public async Task<YearlyRentBookStatisticsDto> GetYearlyRentBookStatisticsAsync()
@@ -576,18 +639,33 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                             o.ActualReturnDate.Value.Year == year)
                 .ToListAsync();
 
-            var returnDates = rentOrders
-                .Select(o => o.ActualReturnDate!.Value.Date)
-                .Distinct()
-                .OrderBy(d => d)
-                .ToList();
+            var monthlyData = new List<YearlyRentMonthDataDto>();
+
+            for (int month = 1; month <= 12; month++)
+            {
+                var monthOrders = rentOrders
+                    .Where(o => o.ActualReturnDate!.Value.Month == month)
+                    .ToList();
+
+                var returnDates = monthOrders
+                    .Select(o => o.ActualReturnDate!.Value.Date)
+                    .Distinct()
+                    .OrderBy(d => d)
+                    .ToList();
+
+                monthlyData.Add(new YearlyRentMonthDataDto
+                {
+                    Month = month,
+                    Orders = monthOrders.Count,
+                    TotalValue = monthOrders.Sum(o => o.TotalFee - (o.ActualRefundAmount ?? 0)),
+                    ReturnDates = returnDates
+                });
+            }
 
             return new YearlyRentBookStatisticsDto
             {
-                ActualReturnDates = returnDates,
-                OrdersThisYear = rentOrders.Count,
-                TotalValueThisYear = rentOrders.Sum(o => o.TotalFee - (o.ActualRefundAmount ?? 0)),
-                Statuses = rentOrders.Select(o => o.Status).Distinct().ToList()
+                Year = year,
+                MonthlyData = monthlyData
             };
         }
 

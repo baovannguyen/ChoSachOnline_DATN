@@ -7,6 +7,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Daily
         public DateTime ActualReturnDate { get; set; }
         public int OrdersToday { get; set; }
         public decimal TotalValueToday { get; set; }
-        public List<OrderStatus> Statuses { get; set; } = new(); // Thêm dòng này
+        public List<OrderStatus> Statuses { get; set; } = new(); // Giữ nguyên
+        public List<RentOrderInDayDto> Orders { get; set; } = new(); // ✅ Thêm dòng này
     }
 }
