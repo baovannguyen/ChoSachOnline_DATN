@@ -8,6 +8,6 @@ namespace ShopThueBanSach.Server.Area.Admin.Model.ReportModel.Monthly
         public List<DateTime> CreatedDates { get; set; } = new();
         public int OrdersThisMonth { get; set; }
         public decimal TotalValueThisMonth { get; set; }
-        public List<OrderStatus> Statuses { get; set; } = new();
+        public List<OrderStatus> Statuses { get; set; } = new();//
     }
 }
