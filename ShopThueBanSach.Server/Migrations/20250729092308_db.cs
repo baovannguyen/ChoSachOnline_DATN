@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ShopThueBanSach.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class NewBd : Migration
+    public partial class db : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,7 +31,7 @@ namespace ShopThueBanSach.Server.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Points = table.Column<double>(type: "float", nullable: false),
                     ImageUser = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -177,28 +177,6 @@ namespace ShopThueBanSach.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SaleBooks", x => x.SaleBookId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SaleOrders",
-                columns: table => new
-                {
-                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    HasShippingFee = table.Column<bool>(type: "bit", nullable: false),
-                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    OriginalTotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SaleOrders", x => x.OrderId);
                 });
 
             migrationBuilder.CreateTable(
@@ -365,6 +343,7 @@ namespace ShopThueBanSach.Server.Migrations
                 columns: table => new
                 {
                     OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -374,6 +353,9 @@ namespace ShopThueBanSach.Server.Migrations
                     ShippingFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalDeposit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Payment = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ActualReturnDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ActualRefundAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false)
@@ -383,6 +365,36 @@ namespace ShopThueBanSach.Server.Migrations
                     table.PrimaryKey("PK_RentOrders", x => x.OrderId);
                     table.ForeignKey(
                         name: "FK_RentOrders_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SaleOrders",
+                columns: table => new
+                {
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Username = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    HasShippingFee = table.Column<bool>(type: "bit", nullable: false),
+                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OriginalTotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SaleOrders", x => x.OrderId);
+                    table.ForeignKey(
+                        name: "FK_SaleOrders_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -617,30 +629,6 @@ namespace ShopThueBanSach.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SaleOrderDetails",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProductId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    SubTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SaleOrderDetails", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SaleOrderDetails_SaleOrders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "SaleOrders",
-                        principalColumn: "OrderId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ActivityNotifications",
                 columns: table => new
                 {
@@ -682,6 +670,30 @@ namespace ShopThueBanSach.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SaleOrderDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProductId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SubTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SaleOrderDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SaleOrderDetails_SaleOrders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "SaleOrders",
+                        principalColumn: "OrderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RentOrderDetails",
                 columns: table => new
                 {
@@ -691,6 +703,7 @@ namespace ShopThueBanSach.Server.Migrations
                     RentBookItemId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     BookTitle = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Condition = table.Column<int>(type: "int", nullable: false),
+                    ConditionDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BookPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     RentalFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -797,8 +810,7 @@ namespace ShopThueBanSach.Server.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_OrderId",
                 table: "Payments",
-                column: "OrderId",
-                unique: true);
+                column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PromotionSaleBooks_SaleBookId",
@@ -829,6 +841,11 @@ namespace ShopThueBanSach.Server.Migrations
                 name: "IX_SaleOrderDetails_OrderId",
                 table: "SaleOrderDetails",
                 column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SaleOrders_UserId",
+                table: "SaleOrders",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Vouchers_DiscountCodeId",

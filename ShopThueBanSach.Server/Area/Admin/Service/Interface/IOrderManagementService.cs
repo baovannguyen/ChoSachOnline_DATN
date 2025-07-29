@@ -12,7 +12,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service.Interface
         Task<List<RentOrderDetailDto>> GetRentOrderDetailDtosAsync(string orderId);
         Task<List<RentOrderDetail>> GetRentOrderDetailsAsync(string orderId);
         Task<bool> UpdateRentOrderStatusAsync(string orderId, OrderStatus status);
-        Task<bool> CompleteRentOrderAsync(string orderId, DateTime actualReturnDate, Dictionary<int, int> updatedConditions);
+        Task<bool> CompleteRentOrderAsync(string orderId, DateTime actualReturnDate, Dictionary<int, int> updatedConditions, Dictionary<int, string> conditionDescriptions);
         Task<int> AutoUpdateOverdueOrdersAsync();
     }
 }

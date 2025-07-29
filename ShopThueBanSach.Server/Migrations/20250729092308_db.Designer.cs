@@ -12,8 +12,8 @@ using ShopThueBanSach.Server.Data;
 namespace ShopThueBanSach.Server.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250722212451_kadsjhfkdsj")]
-    partial class kadsjhfkdsj
+    [Migration("20250729092308_db")]
+    partial class db
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -632,6 +632,10 @@ namespace ShopThueBanSach.Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("OrderId");
 
                     b.HasIndex("UserId");
@@ -662,6 +666,9 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.Property<int>("Condition")
                         .HasColumnType("int");
+
+                    b.Property<string>("ConditionDescription")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OrderId")
                         .IsRequired()
@@ -776,9 +783,14 @@ namespace ShopThueBanSach.Server.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Username")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("OrderId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("SaleOrders");
                 });
@@ -1223,6 +1235,17 @@ namespace ShopThueBanSach.Server.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("RentBookItem");
+                });
+
+            modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrder", b =>
+                {
+                    b.HasOne("ShopThueBanSach.Server.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ShopThueBanSach.Server.Entities.SaleOrderDetail", b =>

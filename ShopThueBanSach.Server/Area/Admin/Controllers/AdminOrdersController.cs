@@ -58,23 +58,25 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             return result ? Ok("Cập nhật trạng thái thành công.") : NotFound("Không tìm thấy đơn hàng.");
         }
 
-        // PUT: api/admin/rentorders/{orderId}/complete
-        [HttpPut("{orderId}/complete")]
-        public async Task<IActionResult> CompleteOrder(
-            string orderId,
-            [FromBody] RentOrderCompleteRequest request)
-        {
-            var result = await _orderService.CompleteRentOrderAsync(
-                orderId,
-                request.ActualReturnDate,
-                request.UpdatedConditions
-            );
+		// PUT: api/admin/rentorders/{orderId}/complete
+		[HttpPut("{orderId}/complete")]
+		public async Task<IActionResult> CompleteOrder(
+  string orderId,
+  [FromBody] RentOrderCompleteRequest request)
+		{
+			var result = await _orderService.CompleteRentOrderAsync(
+				orderId,
+				request.ActualReturnDate,
+				request.UpdatedConditions,
+				request.ConditionDescriptions
+			);
 
-            return result ? Ok("Đơn hàng đã hoàn tất.") : BadRequest("Xử lý thất bại.");
-        }
+			return result ? Ok("Đơn hàng đã hoàn tất.") : BadRequest("Xử lý thất bại.");
+		}
 
-        // PUT: api/admin/rentorders/auto-overdue
-        [HttpPut("auto-overdue")]
+
+		// PUT: api/admin/rentorders/auto-overdue
+		[HttpPut("auto-overdue")]
 		public async Task<IActionResult> UpdateOverdueOrders()
 		{
 			var updatedCount = await _orderService.AutoUpdateOverdueOrdersAsync();
@@ -89,5 +91,6 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
 
         // key = RentOrderDetail.Id, value = tình trạng sách khi trả
         public Dictionary<int, int> UpdatedConditions { get; set; } = new();
-    }
+		public Dictionary<int, string> ConditionDescriptions { get; set; }
+	}
 }

@@ -8,8 +8,9 @@
         public decimal BookPrice { get; set; }
 
         public int Condition { get; set; }
-
-        public int? ReturnCondition { get; set; }
+		public string? ConditionDescription { get; set; }
+		public string? StatusDescription { get; set; }
+		public int? ReturnCondition { get; set; }
 
         public decimal RentalFee { get; set; }
 

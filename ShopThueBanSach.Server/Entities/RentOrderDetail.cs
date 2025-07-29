@@ -12,7 +12,8 @@ namespace ShopThueBanSach.Server.Entities
         public RentBookItem RentBookItem { get; set; }
         public string BookTitle { get; set; }
         public int Condition { get; set; }
-        public decimal BookPrice { get; set; }
+		public string? ConditionDescription { get; set; }
+		public decimal BookPrice { get; set; }
         public decimal RentalFee { get; set; }
         public decimal TotalFee { get; set; }
         public int? ReturnCondition { get; set; }

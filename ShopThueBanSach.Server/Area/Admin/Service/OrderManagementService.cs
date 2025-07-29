@@ -40,26 +40,28 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                 .Include(o => o.Payment)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
-        public async Task<List<RentOrderDetailDto>> GetRentOrderDetailDtosAsync(string orderId)
-        {
-            return await _context.RentOrderDetails
-                .Where(d => d.OrderId == orderId)
-                .Select(d => new RentOrderDetailDto
-                {
-                    Id = d.Id,
-                    BookTitle = d.BookTitle,
-                    BookPrice = d.BookPrice,
-                    Condition = d.Condition,
-                    ReturnCondition = d.ReturnCondition,
-                    RentalFee = d.RentalFee,
-                    TotalFee = d.TotalFee,
-                    ActualRefundAmount = d.ActualRefundAmount,
-                    ActualReturnDate = d.ActualReturnDate
-                })
-                .ToListAsync();
-        }
-        //Lấy chi tiết đơn thuê
-        public async Task<List<RentOrderDetail>> GetRentOrderDetailsAsync(string orderId)
+		public async Task<List<RentOrderDetailDto>> GetRentOrderDetailDtosAsync(string orderId)
+		{
+			return await _context.RentOrderDetails
+				.Where(d => d.OrderId == orderId)
+				.Select(d => new RentOrderDetailDto
+				{
+					Id = d.Id,
+					BookTitle = d.BookTitle,
+					BookPrice = d.BookPrice,
+					Condition = d.Condition,
+					ConditionDescription = d.ConditionDescription,
+					StatusDescription = d.RentBookItem.StatusDescription,
+					ReturnCondition = d.ReturnCondition,
+					RentalFee = d.RentalFee,
+					TotalFee = d.TotalFee,
+					ActualRefundAmount = d.ActualRefundAmount,
+					ActualReturnDate = d.ActualReturnDate
+				})
+				.ToListAsync();
+		}
+		//Lấy chi tiết đơn thuê
+		public async Task<List<RentOrderDetail>> GetRentOrderDetailsAsync(string orderId)
         {
             return await _context.RentOrderDetails
                 .Where(d => d.OrderId == orderId)
@@ -68,26 +70,46 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                 .ToListAsync();
         }
 
-        // Cập nhật trạng thái đơn
-        public async Task<bool> UpdateRentOrderStatusAsync(string orderId, OrderStatus newStatus)
-        {
-            var order = await _context.RentOrders.FindAsync(orderId);
-            if (order == null) return false;
+		// Cập nhật trạng thái đơn
+		public async Task<bool> UpdateRentOrderStatusAsync(string orderId, OrderStatus newStatus)
+		{
+			var order = await _context.RentOrders.FindAsync(orderId);
+			if (order == null) return false;
 
-            // Không cho cập nhật về trạng thái không hợp lệ (nếu cần thêm logic)
-            if (!Enum.IsDefined(typeof(OrderStatus), newStatus))
-                return false;
+			// Không cho cập nhật về trạng thái không hợp lệ (nếu cần thêm logic)
+			if (!Enum.IsDefined(typeof(OrderStatus), newStatus))
+				return false;
 
-            order.Status = newStatus;
-            await _context.SaveChangesAsync();
-            return true;
-        }
+			order.Status = newStatus;
+
+			// Nếu hủy đơn => cập nhật RentBookItem về Available
+			if (newStatus == OrderStatus.Canceled)
+			{
+				var orderDetails = await _context.RentOrderDetails
+					.Where(d => d.OrderId == orderId)
+					.Include(d => d.RentBookItem)
+					.ToListAsync();
+
+				foreach (var detail in orderDetails)
+				{
+					if (detail.RentBookItem != null)
+					{
+						detail.RentBookItem.Status = RentBookItemStatus.Available;
+						detail.RentBookItem.StatusDescription = "Sẵn sàng sau khi hủy đơn";
+					}
+				}
+			}
+
+			await _context.SaveChangesAsync();
+			return true;
+
+		}
 
 		//Hoàn tất đơn thuê
 		public async Task<bool> CompleteRentOrderAsync(
-	  string orderId,
-	  DateTime actualReturnDate,
-	  Dictionary<int, int> updatedConditions)
+	string orderId,
+	DateTime actualReturnDate,
+	Dictionary<int, int> updatedConditions, Dictionary<int, string> conditionDescriptions)
 		{
 			var order = await _context.RentOrders
 				.FirstOrDefaultAsync(o => o.OrderId == orderId);
@@ -111,15 +133,22 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
 				detail.ActualReturnDate = actualReturnDate;
 				detail.ReturnCondition = returnedCondition;
 
+				if (conditionDescriptions.TryGetValue(detail.Id, out string description))
+				{
+					detail.ConditionDescription = description;
+				}
+				else
+				{
+					detail.ConditionDescription = string.Empty;
+				}
+
 				int lostCondition = detail.Condition - returnedCondition;
 				if (lostCondition < 0) lostCondition = 0;
 
-				// Tính phí
 				decimal lateFee = lateDays * 3000;
 				decimal damageFee = (lostCondition / 100m) * detail.BookPrice;
 				decimal totalPenalty = lateFee + damageFee;
 
-				// Nếu trễ > 60 ngày hoặc thiệt hại > 40 => không hoàn cọc
 				bool forfeitDeposit = lateDays > 60 || lostCondition > 40;
 				decimal refund = forfeitDeposit ? 0 : Math.Max(detail.BookPrice - totalPenalty, 0);
 
@@ -136,6 +165,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
 			order.Status = OrderStatus.Completed;
 			order.ActualReturnDate = actualReturnDate;
 			order.ActualRefundAmount = totalRefund;
+
 
 			await _context.SaveChangesAsync();
 			return true;
