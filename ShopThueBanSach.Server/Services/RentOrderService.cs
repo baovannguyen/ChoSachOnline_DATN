@@ -193,8 +193,8 @@ namespace ShopThueBanSach.Server.Services
             string payUrl = await _moMoPaymentService.CreatePaymentUrlAsync(
                 orderId: orderData.Order.OrderId,
                 amount: orderData.Order.TotalFee,
-                returnUrl: "https://localhost:7003/momo-return",
-                notifyUrl: "https://localhost:7003/api/momoorder/callback",
+                returnUrl: "https://chosachonline-datn.onrender.com/momo-return",
+                notifyUrl: "https://chosachonline-datn.onrender.com/api/momoorder/callback",
                 extraData: extraData
             );
 

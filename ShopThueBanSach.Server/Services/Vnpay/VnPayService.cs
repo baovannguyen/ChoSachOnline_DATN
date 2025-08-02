@@ -45,7 +45,7 @@ namespace ShopThueBanSach.Server.Services.Vnpay
 			string frontendRedirectUrl = "https://datn-rg9q.onrender.com/payment-success";
 
 			// Gắn URL callback server + frontend redirect vào query
-			string returnUrlWithRedirect = $"https://localhost:7003/api/saleorders/PaymentCallbackVnpay?redirect={HttpUtility.UrlEncode(frontendRedirectUrl)}";
+			string returnUrlWithRedirect = $"https://chosachonline-datn.onrender.com/api/saleorders/PaymentCallbackVnpay?redirect={HttpUtility.UrlEncode(frontendRedirectUrl)}";
 
 			// Tạo URL thanh toán
 			var vnpay = new VnPayLibrary();
