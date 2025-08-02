@@ -189,6 +189,7 @@ In = Microsoft.OpenApi.Models.ParameterLocation.Header,
 				app.UseSwaggerUI(c =>
 				{
 					c.SwaggerEndpoint("/swagger/v1/swagger.json", "DATN API V1");
+					c.RoutePrefix = "swagger";
 				});
 			}
 			//SeedData
