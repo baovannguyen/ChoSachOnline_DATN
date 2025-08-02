@@ -42,7 +42,7 @@ namespace ShopThueBanSach.Server.Services.Vnpay
 			var sessionValue = System.Text.Json.JsonSerializer.Serialize(paymentSession);
 			context.Session.SetString(sessionKey, sessionValue);
 
-			string frontendRedirectUrl = "http://localhost:5173/payment-success";
+			string frontendRedirectUrl = "https://datn-rg9q.onrender.com/payment-success";
 
 			// Gắn URL callback server + frontend redirect vào query
 			string returnUrlWithRedirect = $"https://localhost:7003/api/saleorders/PaymentCallbackVnpay?redirect={HttpUtility.UrlEncode(frontendRedirectUrl)}";

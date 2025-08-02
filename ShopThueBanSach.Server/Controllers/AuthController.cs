@@ -49,7 +49,7 @@ namespace ShopThueBanSach.Server.Controllers
 				return Unauthorized(new { message = result.Message });
 
 			// Redirect về frontend với token nếu login thành công
-			var redirect = $"http://localhost:5173/oauth-callback?token={result.Token}&refreshToken={result.RefreshToken}";
+			var redirect = $"https://datn-rg9q.onrender.com/oauth-callback?token={result.Token}&refreshToken={result.RefreshToken}";
 			return Redirect(redirect);
 		}
 

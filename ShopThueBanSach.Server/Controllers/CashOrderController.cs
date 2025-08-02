@@ -111,7 +111,7 @@ namespace ShopThueBanSach.Server.Controllers
 						var orderId = orderIdProperty?.GetValue(orderObject)?.ToString();
 
 						// ✅ Redirect về frontend
-						return Redirect($"http://localhost:5173/payment-success?status=success&orderId={orderId}");
+						return Redirect($"https://datn-rg9q.onrender.com/payment-success?status=success&orderId={orderId}");
 					}
 
 					return StatusCode(500, new
@@ -132,7 +132,7 @@ namespace ShopThueBanSach.Server.Controllers
 			}
 
 			// ❌ Trường hợp thanh toán thất bại
-			return Redirect($"http://localhost:5173/payment-success?status=fail&orderId={txnRef}");
+			return Redirect($"https://datn-rg9q.onrender.com/payment-success?status=fail&orderId={txnRef}");
 		}
 
 	}

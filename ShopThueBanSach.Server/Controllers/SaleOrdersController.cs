@@ -107,13 +107,13 @@ namespace ShopThueBanSach.Server.Controllers
 					value.GetType().GetProperty("orderId") is { } prop)
 				{
 					var orderId = prop.GetValue(value)?.ToString();
-					return Redirect($"http://localhost:5173/payment-success?orderId={orderId}");
+					return Redirect($"https://datn-rg9q.onrender.com/payment-success?orderId={orderId}");
 				}
 
-				return Redirect("http://localhost:5173/");
+				return Redirect("https://datn-rg9q.onrender.com/");
 			}
 
-			return Redirect("http://localhost:5173/payment-fail");
+			return Redirect("https://datn-rg9q.onrender.com/payment-fail");
 		}
 
 

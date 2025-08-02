@@ -170,7 +170,7 @@ In = Microsoft.OpenApi.Models.ParameterLocation.Header,
 			{
 				options.AddPolicy("AllowFrontend", builder =>
 				{
-					builder.WithOrigins("http://localhost:5173", "http://localhost:8080") // React & Vue dev server
+					builder.WithOrigins("https://datn-rg9q.onrender.com", "http://localhost:8080") // React & Vue dev server
 						   .AllowAnyHeader()
 						   .AllowAnyMethod()
 						   .AllowCredentials();
