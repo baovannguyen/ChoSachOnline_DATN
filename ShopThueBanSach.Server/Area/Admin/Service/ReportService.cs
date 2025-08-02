@@ -46,7 +46,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             var worksheet = workbook.Worksheets.Add("Báo cáo bán sách");
 
             // 1. Thời gian xuất file - Hàng 1
-            worksheet.Cell(1, 1).Value = $"Thời gian xuất file: {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
+            worksheet.Cell(1, 1).Value = $"Thời gian xuất file: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}";
             worksheet.Range(1, 1, 1, 8).Merge();
             worksheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
@@ -125,7 +125,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
             var worksheet = workbook.Worksheets.Add("Báo cáo thuê sách");
 
             // 1. Thời gian xuất file - Hàng 1
-            worksheet.Cell(1, 1).Value = $"Thời gian xuất file: {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
+            worksheet.Cell(1, 1).Value = $"Thời gian xuất file: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}";
             worksheet.Range(1, 1, 1, 8).Merge();
             worksheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
@@ -218,7 +218,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
 					  .SetTextAlignment(TextAlignment.CENTER)
 					  .SetFontSize(20));
   // Ghi thời gian xuất file
-				  document.Add(new Paragraph($"Thời gian xuất file: {DateTime.Now:dd/MM/yyyy HH:mm:ss}")
+				  document.Add(new Paragraph($"Thời gian xuất file: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}")
 					  .SetTextAlignment(TextAlignment.CENTER));
 
 				  // Header
@@ -291,7 +291,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
 			  .SetFontSize(20));
 
 		  // Ghi thời gian xuất file
-  document.Add(new Paragraph($"Thời gian xuất file: {DateTime.Now:dd/MM/yyyy HH:mm:ss}")
+  document.Add(new Paragraph($"Thời gian xuất file: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}")
 			  .SetTextAlignment(TextAlignment.CENTER));
 
 		  // Header

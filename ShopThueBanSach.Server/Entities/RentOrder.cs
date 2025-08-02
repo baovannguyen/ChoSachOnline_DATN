@@ -19,7 +19,7 @@ namespace ShopThueBanSach.Server.Entities
         [NotMapped]
         public List<CartItemRent> Items { get; set; } = new();
 
-        public DateTime OrderDate { get; set; } = DateTime.Now;
+        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }

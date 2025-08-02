@@ -13,7 +13,7 @@ public class Comment
     [Required]
     public string Content { get; set; }
 
-    public DateTime CreatedDate { get; set; } = DateTime.Now;
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
     public string BookId { get; set; }
 

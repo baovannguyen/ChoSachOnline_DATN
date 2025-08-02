@@ -13,7 +13,7 @@
         public string? ImageUrl { get; set; }
         public int Quantity { get; set; }
     
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
         public bool IsHidden { get; set; }  // <-- thêm property này
         public List<string> AuthorIds { get; set; }

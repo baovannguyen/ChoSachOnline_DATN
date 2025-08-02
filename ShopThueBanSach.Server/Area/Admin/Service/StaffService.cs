@@ -49,7 +49,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                     UserName = dto.FullName,
                     Email = dto.Email ?? $"{Guid.NewGuid()}@placeholder.local",
                     Address = dto.Address,
-                    DateOfBirth = dto.DateOfBirth ?? DateTime.Now,
+                    DateOfBirth = dto.DateOfBirth ?? DateTime.UtcNow,
                     EmailConfirmed = true
                 };
 
@@ -80,7 +80,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                 Password = dto.Password,
                 PhoneNumber = dto.PhoneNumber,
                 Address = dto.Address,
-                DateOfBirth = dto.DateOfBirth ?? DateTime.Now,
+                DateOfBirth = dto.DateOfBirth ?? DateTime.UtcNow,
                 Role = "Staff"
             };
 
@@ -125,7 +125,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
                 user.UserName = existing.FullName;
                 user.Address = existing.Address;
                 user.PhoneNumber = existing.PhoneNumber;
-                user.DateOfBirth = existing.DateOfBirth ?? DateTime.Now;
+                user.DateOfBirth = existing.DateOfBirth ?? DateTime.UtcNow;
 
                 if (!string.IsNullOrWhiteSpace(existing.Password))
                 {

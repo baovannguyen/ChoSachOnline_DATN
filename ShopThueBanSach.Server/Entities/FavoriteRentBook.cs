@@ -8,6 +8,6 @@
         public string RentBookId { get; set; }
         public RentBook RentBook { get; set; }
 
-        public DateTime FavoritedAt { get; set; } = DateTime.Now;
+        public DateTime FavoritedAt { get; set; } = DateTime.UtcNow;
     }
 }

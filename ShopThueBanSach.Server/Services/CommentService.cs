@@ -63,7 +63,7 @@ namespace ShopThueBanSach.Server.Services
 			{
 				CommentId = Guid.NewGuid().ToString(),
 				Content = dto.Content,
-				CreatedDate = DateTime.Now,
+				CreatedDate = DateTime.UtcNow,
 				BookId = dto.BookId,
 				ParentCommentId = dto.ParentCommentId,
 				CreatedById = userId

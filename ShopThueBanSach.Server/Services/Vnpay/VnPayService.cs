@@ -18,7 +18,7 @@ namespace ShopThueBanSach.Server.Services.Vnpay
 
 		public string CreatePaymentUrl(PaymentInformationModel model, HttpContext context)
 		{
-			var tick = DateTime.Now.Ticks.ToString();
+			var tick = DateTime.UtcNow.Ticks.ToString();
 			var txnRef = tick;
 
 			// Lấy giỏ hàng đã chọn
@@ -53,7 +53,7 @@ namespace ShopThueBanSach.Server.Services.Vnpay
 			vnpay.AddRequestData("vnp_Command", "pay");
 			vnpay.AddRequestData("vnp_TmnCode", "KHPCMS36");
 			vnpay.AddRequestData("vnp_Amount", ((int)(model.Amount * 100)).ToString());
-			vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+			vnpay.AddRequestData("vnp_CreateDate", DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
 			vnpay.AddRequestData("vnp_CurrCode", "VND");
 			vnpay.AddRequestData("vnp_IpAddr", context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1");
 			vnpay.AddRequestData("vnp_Locale", "vn");
@@ -83,7 +83,7 @@ collections,
 
 		public string CreatePaymentUrlForRent(PaymentInformationRentModel model, HttpContext context)
 		{
-			var tick = DateTime.Now.Ticks.ToString();
+			var tick = DateTime.UtcNow.Ticks.ToString();
 			var txnRef = tick;
 
 			var paymentSession = new PaymentSessionModel
@@ -104,7 +104,7 @@ collections,
 			vnpay.AddRequestData("vnp_Command", _configuration["Vnpay:Command"]);
 			vnpay.AddRequestData("vnp_TmnCode", _configuration["Vnpay:TmnCode"]);
 			vnpay.AddRequestData("vnp_Amount", ((int)(model.Amount * 100)).ToString());
-			vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+			vnpay.AddRequestData("vnp_CreateDate", DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
 			vnpay.AddRequestData("vnp_CurrCode", _configuration["Vnpay:CurrCode"]);
 			vnpay.AddRequestData("vnp_IpAddr", context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1");
 			vnpay.AddRequestData("vnp_Locale", _configuration["Vnpay:Locale"]);

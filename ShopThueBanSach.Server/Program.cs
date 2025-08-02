@@ -122,7 +122,7 @@ In = Microsoft.OpenApi.Models.ParameterLocation.Header,
 			builder.Services.AddHttpContextAccessor();
 			builder.Services.AddMemoryCache();
 			builder.Services.AddDbContext<AppDBContext>(options =>
-				options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+				options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 			builder.Services.AddIdentity<User, IdentityRole>()
 			.AddEntityFrameworkStores<AppDBContext>()
 			.AddDefaultTokenProviders();
@@ -192,11 +192,7 @@ In = Microsoft.OpenApi.Models.ParameterLocation.Header,
 				});
 			}
 			//SeedData
-			using (var scope = app.Services.CreateScope())
-			{
-				var services = scope.ServiceProvider;
-				await SeedData.InitializeAsync(services);
-			}
+		
 			app.UseHttpsRedirection();
 			app.UseCors("AllowFrontend");
 			app.UseSession();

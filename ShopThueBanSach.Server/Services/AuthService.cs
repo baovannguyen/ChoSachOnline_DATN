@@ -347,13 +347,13 @@ $@"
 				var staff = await _context.Staffs.FirstOrDefaultAsync(s => s.Email == user.Email);
 				if (staff != null)
 				{
-					var description = $"Nhân viên {staff.FullName} đã đăng nhập vào hệ thống lúc {DateTime.Now:HH:mm dd/MM/yyyy}.";
+					var description = $"Nhân viên {staff.FullName} đã đăng nhập vào hệ thống lúc {DateTime.UtcNow:HH:mm dd/MM/yyyy}.";
 					var notification = new ActivityNotification
 					{
 						NotificationId = Guid.NewGuid().ToString(),
 						StaffId = staff.StaffId,
 						Description = description,
-						CreatedDate = DateTime.Now
+						CreatedDate = DateTime.UtcNow
 					};
 
 					_context.ActivityNotifications.Add(notification);

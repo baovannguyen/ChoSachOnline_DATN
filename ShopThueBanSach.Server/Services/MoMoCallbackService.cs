@@ -27,7 +27,7 @@ namespace ShopThueBanSach.Server.Services
             if (result.ResultCode == 0)
             {
                 order.Status = Models.OrderStatus.Confirmed;
-                order.OrderDate = DateTime.Now;
+                order.OrderDate = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
                 return new OkObjectResult("Thanh toán thành công");
             }

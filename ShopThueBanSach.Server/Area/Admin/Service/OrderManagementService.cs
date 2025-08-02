@@ -175,7 +175,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Service
 		//Tự động cập nhật đơn quá hạn
 		public async Task<int> AutoUpdateOverdueOrdersAsync()
 		{
-			var today = DateTime.Now;
+			var today = DateTime.UtcNow;
 
 			var overdueOrders = await _context.RentOrders
 				.Where(o => o.Status != OrderStatus.Pending

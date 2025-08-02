@@ -5,17 +5,17 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy solution and project files
-COPY ../ShopThueBanSach.sln ./
-COPY ./ShopThueBanSach.Server/*.csproj ./ShopThueBanSach.Server/
+COPY ShopThueBanSach.sln ./
+COPY ShopThueBanSach.Server/ ShopThueBanSach.Server/
 
 # Restore NuGet packages
 RUN dotnet restore
 
-# Copy the full source code
+# Copy the rest of the source code (client, shared...)
 COPY . .
 
 # Publish the application
-RUN dotnet publish ./ShopThueBanSach.Server.csproj -c Release -o /app/publish
+RUN dotnet publish ShopThueBanSach.Server/ShopThueBanSach.Server.csproj -c Release -o /app/publish
 
 # -----------------------------
 # STEP 2: Runtime image

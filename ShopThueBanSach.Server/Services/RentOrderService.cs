@@ -39,7 +39,7 @@ namespace ShopThueBanSach.Server.Services
 			{
 				OrderType = "rent",
 				Amount = orderData.Order.TotalFee,
-				OrderDescription = $"Thanh toán đơn thuê sách lúc {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+				OrderDescription = $"Thanh toán đơn thuê sách lúc {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
 				Name = orderData.Order.UserId,
 				UserId = orderData.Order.UserId,
 				ReturnUrl = _vnPayService.GetRentReturnUrl(), // bạn có thể tạo hàm GetRentReturnUrl() trả về từ config
@@ -138,7 +138,7 @@ namespace ShopThueBanSach.Server.Services
 				ShippingFee = sessionData.HasShippingFee ? shippingFee : 0,
 				TotalDeposit = totalDeposit,
 				TotalFee = sessionData.Amount,
-				OrderDate = DateTime.Now,
+				OrderDate = DateTime.UtcNow,
 				Status = OrderStatus.Pending,
 				Payment = "VNPAY"
 			};
@@ -296,7 +296,7 @@ namespace ShopThueBanSach.Server.Services
                 ShippingFee = request.HasShippingFee ? shippingFee : 0,
                 TotalDeposit = totalDeposit,
                 TotalFee = totalFee + totalDeposit,
-                OrderDate = DateTime.Now,
+                OrderDate = DateTime.UtcNow,
                 Status =OrderStatus.Pending ,
             };
 

@@ -22,6 +22,6 @@ namespace ShopThueBanSach.Server.Entities
         [ForeignKey(nameof(DiscountCodeId))]
         public DiscountCode DiscountCode { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

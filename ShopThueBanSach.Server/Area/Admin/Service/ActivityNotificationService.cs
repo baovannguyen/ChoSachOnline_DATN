@@ -18,7 +18,7 @@ public class ActivityNotificationService : IActivityNotificationService
             NotificationId = Guid.NewGuid().ToString(),
             StaffId = staffId,
             Description = description,
-            CreatedDate = DateTime.Now
+            CreatedDate = DateTime.UtcNow
         };
 
         _context.ActivityNotifications.Add(notification);

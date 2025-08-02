@@ -154,7 +154,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             {
                 var excelData = await _reportService.ExportSaleReportToExcelAsync(request.FromDate, request.ToDate);
                 return File(excelData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    $"BaoCaoBanSach_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                    $"BaoCaoBanSach_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx");
             }
             catch (Exception ex)
             {
@@ -169,7 +169,7 @@ namespace ShopThueBanSach.Server.Area.Admin.Controllers
             {
                 var excelData = await _reportService.ExportRentReportToExcelAsync(request.FromDate, request.ToDate);
                 return File(excelData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    $"BaoCaoThueSach_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                    $"BaoCaoThueSach_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx");
             }
             catch (Exception ex)
             {
