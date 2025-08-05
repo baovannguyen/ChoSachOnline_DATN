@@ -42,6 +42,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\Images\RentBooks\" />
+    <Folder Include="wwwroot\Images\SaleBooks\" />
+    <Folder Include="wwwroot\Images\Slides\" />
     <Folder Include="wwwroot\Images\Staffs\" />
     <Folder Include="wwwroot\Images\Users\" />
     <Folder Include="wwwroot\ImageUsers\" />
