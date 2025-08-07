@@ -17,7 +17,7 @@ namespace ShopThueBanSach.Server.Controllers
 		{
 			_rentOrderService = rentOrderService;
 		}
-
+		[Authorize]
 		[HttpPost("create")]
 		public async Task<IActionResult> CreateCashOrder([FromBody] RentOrderRequest request)
 		{
