@@ -113,6 +113,8 @@ In = Microsoft.OpenApi.Models.ParameterLocation.Header,
 			builder.Services.AddScoped<ISaleOrderService, SaleOrderService>();
 			builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
 			builder.Services.AddScoped<ISaleOrderManagementService, SaleOrderManagementService>();
+
+			builder.Services.AddScoped<IPhotoService, PhotoService>();
 			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen(options =>

@@ -6,13 +6,14 @@ using System.Security.Claims;
 
 namespace ShopThueBanSach.Server.Services
 {
-    public class UserService(UserManager<User> userManager, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor) : IUserService
+    public class UserService(UserManager<User> userManager, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, IPhotoService photoService) : IUserService
     {
         private readonly UserManager<User> _userManager = userManager;
         private readonly IWebHostEnvironment _env = env;
         private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+		private readonly IPhotoService _photoService = photoService;
 
-        public async Task<UserProfileDto?> GetProfileAsync()
+		public async Task<UserProfileDto?> GetProfileAsync()
         {
 			var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -34,56 +35,45 @@ namespace ShopThueBanSach.Server.Services
             };
         }
 
-        public async Task<string> UpdateProfileAsync(UpdateProfileDto dto)
-        {
-            var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
-                return "Không xác định được người dùng.";
+		public async Task<string> UpdateProfileAsync(UpdateProfileDto dto)
+		{
+			var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userId == null)
+				return "Không xác định được người dùng.";
 
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-                return "Người dùng không tồn tại.";
+			var user = await _userManager.FindByIdAsync(userId);
+			if (user == null)
+				return "Người dùng không tồn tại.";
 
-            // Cập nhật thông tin cho phép
-            user.UserName = dto.UserName;
-            user.PhoneNumber = dto.PhoneNumber;
-            user.Address = dto.Address;
-            user.DateOfBirth = dto.DateOfBirth;
+			// Cập nhật thông tin
+			user.UserName = dto.UserName;
+			user.PhoneNumber = dto.PhoneNumber;
+			user.Address = dto.Address;
+			user.DateOfBirth = dto.DateOfBirth;
 
-            if (dto.ImageUser != null && dto.ImageUser.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "ImageUsers");
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
+			// Upload ảnh lên Cloudinary nếu có ảnh mới
+			if (dto.ImageUser != null && dto.ImageUser.Length > 0)
+			{
+				if (!string.IsNullOrEmpty(user.ImageUser))
+				{
+					var publicId = Path.GetFileNameWithoutExtension(new Uri(user.ImageUser).AbsolutePath);
+					await _photoService.DeleteImageAsync("UserAvatars/" + publicId);
+				}
 
-                // XÓA ảnh cũ nếu có
-                if (!string.IsNullOrEmpty(user.ImageUser))
-                {
-                    var oldFilePath = Path.Combine(_env.WebRootPath, user.ImageUser.TrimStart('/'));
-                    if (File.Exists(oldFilePath))
-                        File.Delete(oldFilePath);
-                }
+				var (imageUrl, publicIdNew) = await _photoService.UploadImageAsync(dto.ImageUser, "UserAvatars");
+				if (imageUrl != null)
+				{
+					user.ImageUser = imageUrl;
+				}
+			}
 
-                // Lưu ảnh mới
-                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(dto.ImageUser.FileName)}";
-                var newFilePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var stream = new FileStream(newFilePath, FileMode.Create))
-                {
-                    await dto.ImageUser.CopyToAsync(stream);
-                }
+			var result = await _userManager.UpdateAsync(user);
+			return result.Succeeded
+				? "Cập nhật hồ sơ thành công."
+				: $"Lỗi: {string.Join(", ", result.Errors.Select(e => e.Description))}";
+		}
 
-                // Gán đường dẫn ảnh mới
-                user.ImageUser = $"/ImageUsers/{uniqueFileName}";
-            }
-
-            var result = await _userManager.UpdateAsync(user);
-
-            return result.Succeeded
-                ? "Cập nhật hồ sơ thành công."
-                : $"Lỗi: {string.Join(", ", result.Errors.Select(e => e.Description))}";
-        }
-
-        public async Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
+		public async Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return false;
