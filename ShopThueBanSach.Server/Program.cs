@@ -77,7 +77,7 @@ In = Microsoft.OpenApi.Models.ParameterLocation.Header,
 					options.JsonSerializerOptions.PropertyNamingPolicy = null;
 				});
 			// Add services to the container.
-
+			builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 			builder.Services.AddControllers();
 			builder.Services.AddScoped<IAuthService, AuthService>();
 			builder.Services.AddScoped<IUserService, UserService>();
