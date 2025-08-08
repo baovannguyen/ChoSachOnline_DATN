@@ -8,7 +8,7 @@ namespace ShopThueBanSach.Server.Services.Interfaces
         Task<List<Slide>> GetAllAsync();
         Task<Slide?> GetByIdAsync(string id);
         Task<Slide> CreateAsync(SlideDto dto);
-      
+        Task<Slide?> UpdateAsync(string id, SlideDto dto);
         Task<bool> DeleteAsync(string id);
     }
 }
