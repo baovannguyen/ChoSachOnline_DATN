@@ -67,15 +67,15 @@ namespace ShopThueBanSach.Server.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.SlideId }, result);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromForm] SlideDto dto)
-        {
-            var result = await _service.UpdateAsync(id, dto);
-            if (result == null) return NotFound();
+        //[HttpPut("{id}")]
+        //public async Task<IActionResult> Update(string id, [FromForm] SlideDto dto)
+        //{
+        //    var result = await _service.UpdateAsync(id, dto);
+        //    if (result == null) return NotFound();
 
-            await CreateNotificationIfValidAsync($"Cập nhật slide ID: {id}");
-            return Ok(result);
-        }
+        //    await CreateNotificationIfValidAsync($"Cập nhật slide ID: {id}");
+        //    return Ok(result);
+        //}
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)

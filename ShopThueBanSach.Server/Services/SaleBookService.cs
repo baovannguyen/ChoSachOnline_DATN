@@ -12,12 +12,13 @@ namespace ShopThueBanSach.Server.Services
     {
         private readonly AppDBContext _context;
         private readonly IWebHostEnvironment _env;
-
-        public SaleBookService(AppDBContext context, IWebHostEnvironment env)
+		private readonly IPhotoService _photoService;
+		public SaleBookService(AppDBContext context, IWebHostEnvironment env, IPhotoService photoService)
         {
             _context = context;
             _env = env;
-        }
+			_photoService = photoService;
+		}
 
         public async Task<List<SaleBookDto>> GetAllAsync()
         {
@@ -124,25 +125,15 @@ namespace ShopThueBanSach.Server.Services
                 CategorySaleBooks = dto.CategoryIds.Select(cid => new CategorySaleBook { CategoryId = cid }).ToList()
             };
 
-            // Lưu ảnh
-            if (dto.ImageUrl != null && dto.ImageUrl.Length > 0)
-            {
-                var uploadsFolder = Path.Combine("wwwroot", "Images", "SaleBooks");
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
+			// ✅ Upload ảnh bằng Cloudinary
+			if (dto.ImageUrl != null && dto.ImageUrl.Length > 0)
+			{
+				var (imageUrl, publicId) = await _photoService.UploadImageAsync(dto.ImageUrl, "SaleBooks");
+				saleBook.ImageUrl = imageUrl;
+			}
 
-                var uniqueFileName = $"{Guid.NewGuid()}_{dto.ImageUrl.FileName}";
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+			_context.SaleBooks.Add(saleBook);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await dto.ImageUrl.CopyToAsync(stream);
-                }
-
-                saleBook.ImageUrl = $"/Images/SaleBooks/{uniqueFileName}";
-            }
-
-            _context.SaleBooks.Add(saleBook);
 
 			// Xử lý promotions nếu có
 			if (dto.PromotionIds != null && dto.PromotionIds.Any())
@@ -201,28 +192,22 @@ namespace ShopThueBanSach.Server.Services
             saleBook.Price = dto.Price;
             saleBook.Quantity = dto.Quantity;
             saleBook.IsHidden = dto.IsHidden;
-          
+
 
 			if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "Images", "SaleBooks");
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
+			{
+				// Xóa ảnh cũ
+				if (!string.IsNullOrEmpty(saleBook.ImageUrl))
+				{
+					var publicId = Path.GetFileNameWithoutExtension(new Uri(saleBook.ImageUrl).AbsolutePath);
+					await _photoService.DeleteImageAsync("SaleBooks/" + publicId);
+				}
 
-                if (!string.IsNullOrEmpty(saleBook.ImageUrl))
-                {
-                    var oldPath = Path.Combine(_env.WebRootPath, saleBook.ImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-                    if (File.Exists(oldPath)) File.Delete(oldPath);
-                }
-
-                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(dto.ImageFile.FileName)}";
-                var newPath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var stream = new FileStream(newPath, FileMode.Create))
-                {
-                    await dto.ImageFile.CopyToAsync(stream);
-                }
-                saleBook.ImageUrl = $"/Images/SaleBooks/{uniqueFileName}";
-            }
+				// Upload ảnh mới
+				var (imageUrl, publicIdNew) = await _photoService.UploadImageAsync(dto.ImageFile, "SaleBooks");
+				if (!string.IsNullOrEmpty(imageUrl))
+					saleBook.ImageUrl = imageUrl;
+			}
 
 			// Cập nhật Promotions
 			_context.PromotionSaleBooks.RemoveRange(saleBook.PromotionSaleBooks);
@@ -279,16 +264,24 @@ namespace ShopThueBanSach.Server.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var saleBook = await _context.SaleBooks.FindAsync(id);
-            if (saleBook == null) return false;
-            _context.SaleBooks.Remove(saleBook);
-            await _context.SaveChangesAsync();
-            return true;
-        }
+		public async Task<bool> DeleteAsync(string id)
+		{
+			var saleBook = await _context.SaleBooks.FindAsync(id);
+			if (saleBook == null) return false;
 
-        public async Task<bool> SetVisibilityAsync(string id, bool isHidden)
+			// ✅ Xoá ảnh khỏi Cloudinary nếu có
+			if (!string.IsNullOrEmpty(saleBook.ImageUrl))
+			{
+				var publicId = Path.GetFileNameWithoutExtension(new Uri(saleBook.ImageUrl).AbsolutePath);
+				await _photoService.DeleteImageAsync("SaleBooks/" + publicId);
+			}
+
+			_context.SaleBooks.Remove(saleBook);
+			await _context.SaveChangesAsync();
+			return true;
+		}
+
+		public async Task<bool> SetVisibilityAsync(string id, bool isHidden)
         {
             var saleBook = await _context.SaleBooks.FindAsync(id);
             if (saleBook == null) return false;
