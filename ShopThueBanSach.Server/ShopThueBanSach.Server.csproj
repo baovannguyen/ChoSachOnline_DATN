@@ -10,6 +10,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\Images\Staffs\**" />
+    <Compile Remove="wwwroot\Images\Users\**" />
+    <Compile Remove="wwwroot\ImageUsers\**" />
+    <Content Remove="wwwroot\Images\Staffs\**" />
+    <Content Remove="wwwroot\Images\Users\**" />
+    <Content Remove="wwwroot\ImageUsers\**" />
+    <EmbeddedResource Remove="wwwroot\Images\Staffs\**" />
+    <EmbeddedResource Remove="wwwroot\Images\Users\**" />
+    <EmbeddedResource Remove="wwwroot\ImageUsers\**" />
+    <None Remove="wwwroot\Images\Staffs\**" />
+    <None Remove="wwwroot\Images\Users\**" />
+    <None Remove="wwwroot\ImageUsers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.6" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.16" />
@@ -43,12 +58,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\Images\RentBooks\" />
-    <Folder Include="wwwroot\Images\SaleBooks\" />
     <Folder Include="wwwroot\Images\Slides\" />
-    <Folder Include="wwwroot\Images\Staffs\" />
-    <Folder Include="wwwroot\Images\Users\" />
-    <Folder Include="wwwroot\ImageUsers\" />
   </ItemGroup>
 
 </Project>

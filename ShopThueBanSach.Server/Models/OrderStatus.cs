@@ -8,8 +8,8 @@
 		Completed,//hoàn thành
 		Renting,//đang thuê
 		Overdue,//quá hạn
-		Canceled//đã hủy
-
+		Canceled,//đã hủy
+			Refund//Hoàn tiền
 
 	}
 }
