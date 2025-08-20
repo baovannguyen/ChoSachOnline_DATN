@@ -13,18 +13,20 @@ namespace ShopThueBanSach.Server.Services
 {
     public class UserManagerService : IUserManagerService
     {
-        private readonly UserManager<User> _userManager;
-        private readonly IStaffService _staffService;
-        private readonly RoleManager<IdentityRole> _roleManager;
+		private readonly UserManager<User> _userManager;
+		private readonly IStaffService _staffService;
+		private readonly RoleManager<IdentityRole> _roleManager;
+		private readonly IPhotoService _photoService;
 
-        public UserManagerService(UserManager<User> userManager, IStaffService staffService, RoleManager<IdentityRole> roleManager)
-        {
-            _userManager = userManager;
-            _staffService = staffService;
-            _roleManager = roleManager;
-        }
+		public UserManagerService(UserManager<User> userManager, IStaffService staffService, RoleManager<IdentityRole> roleManager, IPhotoService photoService)
+		{
+			_userManager = userManager;
+			_staffService = staffService;
+			_roleManager = roleManager;
+			_photoService = photoService;
+		}
 
-        public async Task<IEnumerable<UserDto>> GetAllAsync()
+		public async Task<IEnumerable<UserDto>> GetAllAsync()
         {
             var users = await _userManager.Users.ToListAsync();
             var result = new List<UserDto>();
@@ -60,101 +62,123 @@ namespace ShopThueBanSach.Server.Services
             return await MapToDto(user, _userManager);
         }
 
-        public async Task<bool> UpdateAsync(string id, UpdateUserDto dto)
-        {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null) return false;
+		public async Task<bool> UpdateAsync(string id, UpdateUserDto dto)
+		{
+			var user = await _userManager.FindByIdAsync(id);
+			if (user == null) return false;
 
-            user.Address = dto.Address ?? user.Address;
-            user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
-            user.DateOfBirth = dto.DateOfBirth ?? user.DateOfBirth;
-            user.Points = dto.Points ?? user.Points;
+			user.Address = dto.Address ?? user.Address;
+			user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
+			user.DateOfBirth = dto.DateOfBirth ?? user.DateOfBirth;
+			user.Points = dto.Points ?? user.Points;
 
-            if (dto.ImageFile != null)
-            {
-                user.ImageUser = await SaveImageAsync(dto.ImageFile);
-            }
+			if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+			{
+				if (!string.IsNullOrEmpty(user.ImageUser))
+				{
+					var oldPublicId = Path.GetFileNameWithoutExtension(new Uri(user.ImageUser).AbsolutePath);
+					await _photoService.DeleteImageAsync("UserAvatars/" + oldPublicId);
+				}
 
-            if (!string.IsNullOrWhiteSpace(dto.Role))
-            {
-                // 🛡️ Kiểm tra và tạo role nếu chưa tồn tại
-                if (!await _roleManager.RoleExistsAsync(dto.Role))
-                {
-                    await _roleManager.CreateAsync(new IdentityRole(dto.Role));
-                }
+				var (imageUrl, publicIdNew) = await _photoService.UploadImageAsync(dto.ImageFile, "UserAvatars");
+				if (imageUrl != null)
+				{
+					user.ImageUser = imageUrl;
+				}
+			}
 
-                var currentRoles = await _userManager.GetRolesAsync(user);
-                if (currentRoles.Any())
-                {
-                    var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
-                    if (!removeResult.Succeeded) return false;
-                }
+			if (!string.IsNullOrWhiteSpace(dto.Role))
+			{
+				if (!await _roleManager.RoleExistsAsync(dto.Role))
+				{
+					await _roleManager.CreateAsync(new IdentityRole(dto.Role));
+				}
 
-                var addResult = await _userManager.AddToRoleAsync(user, dto.Role);
-                if (!addResult.Succeeded) return false;
+				var currentRoles = await _userManager.GetRolesAsync(user);
+				if (currentRoles.Any())
+				{
+					var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+					if (!removeResult.Succeeded) return false;
+				}
 
-                // ✅ Nếu role là Staff → tạo Staff nếu chưa có
-                if (dto.Role == "Staff")
-                {
-                    var staffExists = await _staffService.ExistsAsync(user.Id);
-                    if (!staffExists)
-                    {
-                        var staffDto = new StaffDto
-                        {
-                            StaffId = user.Id,
-                            FullName = user.UserName ?? "",
-                            Email = user.Email,
-                            Address = user.Address,
-                            PhoneNumber = user.PhoneNumber,
-                            DateOfBirth = user.DateOfBirth,
-                            ImageFile = null, // Không đổi ảnh từ đây
-                            Password = "" // Không cần thiết vì đã có trong AspNetUsers
-                        };
+				var addResult = await _userManager.AddToRoleAsync(user, dto.Role);
+				if (!addResult.Succeeded) return false;
 
-                        await _staffService.AddAsync(staffDto);
-                    }
-                }
-            }
+				if (dto.Role == "Staff")
+				{
+					var staffExists = await _staffService.ExistsAsync(user.Id);
+					if (!staffExists)
+					{
+						var staffDto = new StaffDto
+						{
+							StaffId = user.Id,
+							FullName = user.UserName ?? "",
+							Email = user.Email,
+							Address = user.Address,
+							PhoneNumber = user.PhoneNumber,
+							DateOfBirth = user.DateOfBirth,
+							ImageFile = null,
+							Password = ""
+						};
 
-            var updateResult = await _userManager.UpdateAsync(user);
-            return updateResult.Succeeded;
-        }
+						await _staffService.AddAsync(staffDto);
+					}
+				}
+			}
 
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null) return false;
+			var updateResult = await _userManager.UpdateAsync(user);
+			return updateResult.Succeeded;
+		}
 
-            var roles = await _userManager.GetRolesAsync(user);
-            if (!roles.Contains("Customer")) return false;
+		public async Task<bool> DeleteAsync(string id)
+		{
+			var user = await _userManager.FindByIdAsync(id);
+			if (user == null) return false;
 
-            var result = await _userManager.DeleteAsync(user);
-            return result.Succeeded;
-        }
+			var roles = await _userManager.GetRolesAsync(user);
+			if (!roles.Contains("Customer")) return false;
+			if (!string.IsNullOrEmpty(user.ImageUser))
+			{
+				var publicId = Path.GetFileNameWithoutExtension(new Uri(user.ImageUser).AbsolutePath);
+				await _photoService.DeleteImageAsync("UserAvatars/" + publicId);
+			}
+			var result = await _userManager.DeleteAsync(user);
+			return result.Succeeded;
+		}
 
-        public async Task<bool> UpdateCustomerAsync(string id, UpdateCustomerDto dto)
-        {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null) return false;
+		public async Task<bool> UpdateCustomerAsync(string id, UpdateCustomerDto dto)
+		{
+			var user = await _userManager.FindByIdAsync(id);
+			if (user == null) return false;
 
-            var roles = await _userManager.GetRolesAsync(user);
-            if (!roles.Contains("Customer")) return false;
+			var roles = await _userManager.GetRolesAsync(user);
+			if (!roles.Contains("Customer")) return false;
 
-            user.Address = dto.Address ?? user.Address;
-            user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
-            user.DateOfBirth = dto.DateOfBirth ?? user.DateOfBirth;
-            user.Points = dto.Points ?? user.Points;
+			user.Address = dto.Address ?? user.Address;
+			user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
+			user.DateOfBirth = dto.DateOfBirth ?? user.DateOfBirth;
+			user.Points = dto.Points ?? user.Points;
 
-            if (dto.ImageFile != null)
-            {
-                user.ImageUser = await SaveImageAsync(dto.ImageFile);
-            }
+			if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+			{
+				if (!string.IsNullOrEmpty(user.ImageUser))
+				{
+					var oldPublicId = Path.GetFileNameWithoutExtension(new Uri(user.ImageUser).AbsolutePath);
+					await _photoService.DeleteImageAsync("UserAvatars/" + oldPublicId);
+				}
 
-            var result = await _userManager.UpdateAsync(user);
-            return result.Succeeded;
-        }
+				var (imageUrl, publicIdNew) = await _photoService.UploadImageAsync(dto.ImageFile, "UserAvatars");
+				if (imageUrl != null)
+				{
+					user.ImageUser = imageUrl;
+				}
+			}
 
-        private async Task<string> SaveImageAsync(IFormFile imageFile)
+			var result = await _userManager.UpdateAsync(user);
+			return result.Succeeded;
+		}
+
+		private async Task<string> SaveImageAsync(IFormFile imageFile)
         {
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "Users");
             if (!Directory.Exists(uploadsFolder))
