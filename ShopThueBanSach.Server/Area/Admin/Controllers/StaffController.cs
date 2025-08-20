@@ -1,4 +1,5 @@
 ﻿// Controllers/StaffController.cs
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ShopThueBanSach.Server.Area.Admin.Entities;
 using ShopThueBanSach.Server.Area.Admin.Model.StaffModel;
@@ -7,7 +8,7 @@ using ShopThueBanSach.Server.Models.StaffModel;
 
 namespace ShopThueBanSach.Server.Area.Admin.Controllers
 {
-    // [Authorize(Roles = "Admin")] // ⬅️ Bật nếu chỉ Admin được quản lý Staff
+    [Authorize(Roles = "Admin")] // ⬅️ Bật nếu chỉ Admin được quản lý Staff
     [Route("api/[controller]")]
     [ApiController]
     public class StaffController : ControllerBase
