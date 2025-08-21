@@ -269,7 +269,9 @@ namespace ShopThueBanSach.Server.Services
 				UserName = dto.UserName,
 				Email = dto.Email,
 				Address = dto.Address,
-				DateOfBirth = (DateTime)dto.DateOfBirth!,
+				DateOfBirth = dto.DateOfBirth.HasValue
+	? DateTime.SpecifyKind(dto.DateOfBirth.Value, DateTimeKind.Utc)
+	: null,
 				EmailConfirmed = false
 			};
 
