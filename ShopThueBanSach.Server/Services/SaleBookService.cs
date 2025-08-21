@@ -20,51 +20,106 @@ namespace ShopThueBanSach.Server.Services
 			_photoService = photoService;
 		}
 
-        public async Task<List<SaleBookDto>> GetAllAsync()
-        {
-            var saleBooks = await _context.SaleBooks
-                .Include(sb => sb.AuthorSaleBooks)
-                .Include(sb => sb.CategorySaleBooks)
-                .Include(sb => sb.PromotionSaleBooks).ThenInclude(psb => psb.Promotion)
-                .ToListAsync();
+		public async Task<List<SaleBookDto>> GetAllAsync()
+		{
+			var validPromotions = _context.PromotionSaleBooks
+					.Select(psb => psb.Promotion)
+					.Where(p => p != null && p.StartDate <= DateTime.UtcNow && p.EndDate >= DateTime.UtcNow)
+					.ToList();
 
-            return saleBooks.Select(sb =>
-            {
-                var validPromotions = sb.PromotionSaleBooks
-                    .Select(psb => psb.Promotion)
-                    .Where(p => p != null && p.StartDate <= DateTime.UtcNow && p.EndDate >= DateTime.UtcNow)
-                    .ToList();
+			var bestPromotion = validPromotions
+			   .OrderByDescending(p => p.DiscountPercentage)
+			   .FirstOrDefault();
+			//var saleBooks = await _context.SaleBooks
+			//    .Include(sb => sb.AuthorSaleBooks)
+			//    .Include(sb => sb.CategorySaleBooks)
+			//    .Include(sb => sb.PromotionSaleBooks)
+			//    .ToListAsync();
+			//return await _context.SaleBooks
+			//   .Include(r => r.AuthorSaleBooks)
+			//   .Include(r => r.CategorySaleBooks)
+			//   .Select(r => new SaleBookDto
+			//   {
+			//       SaleBookId = r.SaleBookId,
+			//       Title = r.Title,
+			//       Description = r.Description,
+			//       Publisher = r.Publisher,
+			//       Translator = r.Translator,
+			//       PackagingSize = r.Size,
+			//       PageCount = r.Pages,
+			//       Price = r.Price,
+			//       FinalPrice = bestPromotion != null
+			//            ? r.Price * (1 - (decimal)(bestPromotion.DiscountPercentage / 100))
+			//            : r.Price,
+			//       PromotionName = bestPromotion?.PromotionName,
+			//       PromotionIds = validPromotions.Select(p => p.PromotionId).ToList(),
+			//       Quantity = r.Quantity,
+			//       ImageUrl = r.ImageUrl,
+			//       IsHidden = r.IsHidden,
+			//       AuthorIds = r.AuthorSaleBooks.Select(a => a.AuthorId).ToList(),
+			//       CategoryIds = r.CategorySaleBooks.Select(c => c.CategoryId).ToList()
+			//   }).ToListAsync();
+			//return saleBooks.Select(sb =>
+			//{
+			//    var validPromotions = sb.PromotionSaleBooks
+			//        .Select(psb => psb.Promotion)
+			//        .Where(p => p != null && p.StartDate <= DateTime.UtcNow && p.EndDate >= DateTime.UtcNow)
+			//        .ToList();
 
-                var bestPromotion = validPromotions
-                    .OrderByDescending(p => p.DiscountPercentage)
-                    .FirstOrDefault();
+			//    var bestPromotion = validPromotions
+			//        .OrderByDescending(p => p.DiscountPercentage)
+			//        .FirstOrDefault();
 
-                return new SaleBookDto
-                {
-                    SaleBookId = sb.SaleBookId,
-                    Title = sb.Title,
-                    Description = sb.Description,
-                    Publisher = sb.Publisher,
-                    Translator = sb.Translator,
-                    PackagingSize = sb.Size,
-                    PageCount = sb.Pages,
-                    Price = sb.Price,
-                    FinalPrice = bestPromotion != null
-                        ? sb.Price * (1 - (decimal)(bestPromotion.DiscountPercentage / 100))
-                        : sb.Price,
-                    PromotionName = bestPromotion?.PromotionName,
-                    PromotionIds = validPromotions.Select(p => p.PromotionId).ToList(),
-                    Quantity = sb.Quantity,
-                    ImageUrl = sb.ImageUrl,
-                    IsHidden = sb.IsHidden,
-                    AuthorIds = sb.AuthorSaleBooks.Select(a => a.AuthorId).ToList(),
-                    CategoryIds = sb.CategorySaleBooks.Select(c => c.CategoryId).ToList()
-                };
-            }).ToList();
-        }
+			//    return new SaleBookDto
+			//    {
+			//        SaleBookId = sb.SaleBookId,
+			//        Title = sb.Title,
+			//        Description = sb.Description,
+			//        Publisher = sb.Publisher,
+			//        Translator = sb.Translator,
+			//        PackagingSize = sb.Size,
+			//        PageCount = sb.Pages,
+			//        Price = sb.Price,
+			//        FinalPrice = bestPromotion != null
+			//            ? sb.Price * (1 - (decimal)(bestPromotion.DiscountPercentage / 100))
+			//            : sb.Price,
+			//        PromotionName = bestPromotion?.PromotionName,
+			//        PromotionIds = validPromotions.Select(p => p.PromotionId).ToList(),
+			//        Quantity = sb.Quantity,
+			//        ImageUrl = sb.ImageUrl,
+			//        IsHidden = sb.IsHidden,
+			//        AuthorIds = sb.AuthorSaleBooks.Select(a => a.AuthorId).ToList(),
+			//        CategoryIds = sb.CategorySaleBooks.Select(c => c.CategoryId).ToList()
+			//    };
+			return await _context.SaleBooks
+				.Include(r => r.AuthorSaleBooks)
+				.Include(r => r.CategorySaleBooks)
+				.Select(r => new SaleBookDto
+				{
+					SaleBookId = r.SaleBookId,
+					Title = r.Title,
+					Description = r.Description,
+					Publisher = r.Publisher,
+					Translator = r.Translator,
+					PackagingSize = r.Size,
+					PageCount = r.Pages,
+					Price = r.Price,
+					FinalPrice = bestPromotion != null
+						? r.Price * (1 - (decimal)(bestPromotion.DiscountPercentage / 100))
+						: r.Price,
+					PromotionName = bestPromotion != null ? bestPromotion.PromotionName : null, // Replace null-propagating operator
+					PromotionIds = validPromotions.Select(p => p.PromotionId).ToList(),
+					Quantity = r.Quantity,
+					ImageUrl = r.ImageUrl,
+					IsHidden = r.IsHidden,
+					AuthorIds = r.AuthorSaleBooks.Select(a => a.AuthorId).ToList(),
+					CategoryIds = r.CategorySaleBooks.Select(c => c.CategoryId).ToList()
+				}).ToListAsync();
+			//}).ToList();
+		}
 
 
-        public async Task<SaleBookDto?> GetByIdAsync(string id)
+		public async Task<SaleBookDto?> GetByIdAsync(string id)
         {
             var sb = await _context.SaleBooks
                 .Include(s => s.AuthorSaleBooks)
